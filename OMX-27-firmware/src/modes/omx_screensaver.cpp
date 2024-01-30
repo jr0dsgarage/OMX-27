@@ -7,12 +7,12 @@
 
 void OmxScreensaver::setScreenSaverColor()
 {
-	colorConfig.screensaverColor = map(potSettings.analog[4]->getValue(), potMinVal, potMaxVal, 0, 32764);
+	// full color range is 0-65528, but its reduced here to avoid red color duplication, so it becomes 0-62613
+	colorConfig.screensaverColor = map(potSettings.analog[4]->getValue(), potMinVal, potMaxVal, 0, 62613);
 }
 
 void OmxScreensaver::onPotChanged(int potIndex, int prevValue, int newValue, int analogDelta)
 {
-	//     colorConfig.screensaverColor = potSettings.analog[4]->getValue() * 4; // value is 0-32764 for strip.ColorHSV
 	setScreenSaverColor();
 
 	// reset screensaver
