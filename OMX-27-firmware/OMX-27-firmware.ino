@@ -1005,8 +1005,6 @@ void setup()
 	// LEDs
 	omxLeds.initSetup();
 
-	omxScreensaver.InitSetup();
-
 #ifdef RAM_MONITOR
 	reporttime = millis();
 #endif
