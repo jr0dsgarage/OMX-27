@@ -875,7 +875,8 @@ void loop()
 void setup()
 {
 	Serial.begin(115200);
-	Serial.print("OMX-27 v");
+	Serial.println(omx27ascii.c_str());
+	Serial.print("version: ");
 	Serial.print(OMX_VERSION.c_str());
 	Serial.print(" - ");
 	//	while( !Serial );
