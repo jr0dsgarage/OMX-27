@@ -662,7 +662,12 @@ void loop()
 	//
 	//	Serial.println(screenSaverCounter);
 	omxScreensaver.updateScreenSaverState();
-	sysSettings.screenSaverMode = omxScreensaver.shouldShowScreenSaver();
+	if (omxScreensaver.shouldShowScreenSaver())
+	{
+		omxScreensaver.setScreenSaverColor();
+		sysSettings.screenSaverMode = true;
+	}
+	//sysSettings.screenSaverMode = omxScreensaver.shouldShowScreenSaver();
 
 	// ############### POTS ###############
 	//

@@ -45,7 +45,7 @@ void OmxScreensaver::updateScreenSaverState()
 
 bool OmxScreensaver::shouldShowScreenSaver()
 {
-	setScreenSaverColor();
+
 	return screenSaverActive;
 }
 
