@@ -1,5 +1,5 @@
 #pragma once
-
+#include <string>
 // OMX-27 shared constants
 
 // HW_VERSIONS
