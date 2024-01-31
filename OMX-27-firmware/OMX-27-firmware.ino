@@ -184,6 +184,9 @@ void changeOmxMode(OMXMode newOmxmode)
 	case MODE_EUCLID:
 		activeOmxMode = &omxModeEuclid;
 		break;
+	case MODE_SS:
+		activeOmxMode = &omxScreensaver;
+		break;
 	default:
 		omxModeMidi.setMidiMode();
 		activeOmxMode = &omxModeMidi;
