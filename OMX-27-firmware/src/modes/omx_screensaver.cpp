@@ -5,12 +5,6 @@
 #include "../hardware/omx_disp.h"
 #include "../hardware/omx_leds.h"
 
-void OmxScreensaver::setScreenSaverColor()
-{
-	// full color range is 0-65528, but its reduced here to avoid red color duplication, so it becomes 0-62613
-	colorConfig.screensaverColor = map(potSettings.analog[4]->getValue(), potMinVal, potMaxVal, 0, 62613);
-}
-
 void OmxScreensaver::onPotChanged(int potIndex, int prevValue, int newValue, int analogDelta)
 {
 	setScreenSaverColor();
@@ -41,6 +35,12 @@ void OmxScreensaver::updateScreenSaverState()
 		screenSaverActive = false;
 		nextStepTimeSS = millis();
 	}
+}
+
+void OmxScreensaver::setScreenSaverColor()
+{
+	// full color range is 0-65528, but its reduced here to avoid red color duplication, so it becomes 0-62613
+	colorConfig.screensaverColor = map(potSettings.analog[4]->getValue(), potMinVal, potMaxVal, 0, 62613);
 }
 
 bool OmxScreensaver::shouldShowScreenSaver()
