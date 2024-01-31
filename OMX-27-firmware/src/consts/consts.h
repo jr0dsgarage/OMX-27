@@ -45,7 +45,7 @@ const int midiMiddleC = 60;
 const int midiLowestNote = midiMiddleC - 3 * 12; // 3 is how many octaves under middle c
 const int midiHightestNote = midiLowestNote + int(fullRangeV * 12) - 1;
 const std::string omx27ascii = R"(
-  ___  ___  ___  ___  ___  ___
+  __   __   __   __   __   __
 ||o |||m |||x |||- |||2 |||7 ||
 ||__|||__|||__|||__|||__|||__||
 |/__\|/__\|/__\|/__\|/__\|/__\|
