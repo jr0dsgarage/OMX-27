@@ -45,12 +45,17 @@ void OmxScreensaver::updateScreenSaverState()
 
 bool OmxScreensaver::shouldShowScreenSaver()
 {
-
 	return screenSaverActive;
 }
 
 void OmxScreensaver::onEncoderChanged(Encoder::Update enc)
 {
+	// Add debug statements to troubleshoot the code
+	Serial.println("onEncoderChanged function called.");
+	Serial.print("Encoder active? ");
+	Serial.println(enc.active());
+	Serial.print("Encoder direction: ");
+	Serial.println(enc.dir());
 }
 
 void OmxScreensaver::onKeyUpdate(OMXKeypadEvent e)
