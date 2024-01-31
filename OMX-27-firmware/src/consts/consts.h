@@ -44,6 +44,12 @@ const float stepsPerSemitone = stepsPerOctave / 12;
 const int midiMiddleC = 60;
 const int midiLowestNote = midiMiddleC - 3 * 12; // 3 is how many octaves under middle c
 const int midiHightestNote = midiLowestNote + int(fullRangeV * 12) - 1;
+const std::string omx27ascii = R"(
+  ___  ___  ___  ___  ___  ___
+||o |||m |||x |||- |||2 |||7 ||
+||__|||__|||__|||__|||__|||__||
+|/__\|/__\|/__\|/__\|/__\|/__\|
+)";
 
 // FONTS
 #define FONT_LABELS u8g2_font_5x8_tf
@@ -53,3 +59,4 @@ const int midiHightestNote = midiLowestNote + int(fullRangeV * 12) - 1;
 #define FONT_TENFAT u8g2_font_tenfatguys_tf
 #define FONT_BIG u8g2_font_helvB18_tr
 #define FONT_CHAR16 u8g2_font_6x12_tf
+
