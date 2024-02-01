@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdint.h>
+#include <string>
 #include <ResponsiveAnalogRead.h>
 #include <Wire.h>
 #include <Adafruit_MCP4725.h>
@@ -15,10 +16,10 @@
 // #include <cstdarg>
 
 /* * firmware metadata  */
-// OMX_VERSION = 1.12.17
 const int MAJOR_VERSION = 1;
 const int MINOR_VERSION = 12;
 const int POINT_VERSION = 17;
+const std::string OMX_VERSION = std::to_string(MAJOR_VERSION) + "." + std::to_string(MINOR_VERSION) + "." + std::to_string(POINT_VERSION);
 
 const int DEVICE_ID = 2;
 
