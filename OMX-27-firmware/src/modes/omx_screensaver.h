@@ -8,6 +8,8 @@ public:
 	OmxScreensaver() {}
 	~OmxScreensaver() {}
 
+	const String modeName = "Screensaver";
+
 	void onPotChanged(int potIndex, int prevValue, int newValue, int analogDelta) override;
 
 	void updateLEDs() override;

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include "omx_mode_interface.h"
 #include "../utils/music_scales.h"
 #include "../utils/param_manager.h"
@@ -12,9 +13,12 @@
 
 class OmxModeMidiKeyboard : public OmxModeInterface
 {
+
 public:
 	OmxModeMidiKeyboard();
 	~OmxModeMidiKeyboard() {}
+
+	const String modeName = "MIDI Keyboard";
 
 	void InitSetup() override;
 	void onModeActivated() override;
