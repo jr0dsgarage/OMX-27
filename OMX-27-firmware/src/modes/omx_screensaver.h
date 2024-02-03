@@ -7,8 +7,9 @@ class OmxScreensaver : public OmxModeInterface
 public:
 	OmxScreensaver() {}
 	~OmxScreensaver() {}
+	const char *modeName = "Screensaver";
 
-	const String modeName = "Screensaver";
+	char* getModeName() override{return (char*)modeName;}
 
 	void onPotChanged(int potIndex, int prevValue, int newValue, int analogDelta) override;
 

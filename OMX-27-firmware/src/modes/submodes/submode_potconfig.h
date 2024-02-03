@@ -10,7 +10,9 @@ public:
 	SubModePotConfig();
 	~SubModePotConfig() {}
 
-	const String modeName = "Pot Config";
+	const char *modeName = "Pot Config";
+
+	char* getModeName() override{return (char*)modeName;}
 
 	// Interface methods
 	void loopUpdate() override;
