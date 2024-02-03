@@ -190,6 +190,7 @@ void changeOmxMode(OMXMode newOmxmode)
 	}
 
 	activeOmxMode->onModeActivated();
+	Serial.println((String)"* Mode changed to: " + *(activeOmxMode->modeName )+  " *");
 }
 
 // ####### END LEDS
