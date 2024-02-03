@@ -1,12 +1,17 @@
 #pragma once
+#include <string>
 #include "../ClearUI/ClearUI_Input.h"
 #include "../hardware/omx_keypad.h"
 #include "../config.h"
 class OmxModeInterface
 {
+
 public:
+
 	OmxModeInterface() {}
 	virtual ~OmxModeInterface() {}
+
+	const String *modeName;
 
 	virtual void InitSetup() {} // Called once when mode is created
 

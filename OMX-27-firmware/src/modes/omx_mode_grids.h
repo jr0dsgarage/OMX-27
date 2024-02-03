@@ -14,6 +14,8 @@ public:
 	OmxModeGrids();
 	~OmxModeGrids() {}
 
+	const String modeName = "Grids";
+
 	void InitSetup() override;
 
 	void onModeActivated() override;

@@ -21,6 +21,8 @@ public:
 	OmxModeEuclidean();
 	~OmxModeEuclidean() {}
 
+	const String modeName = "Euclidean";
+
 	void InitSetup() override;
 
 	void onModeActivated() override;

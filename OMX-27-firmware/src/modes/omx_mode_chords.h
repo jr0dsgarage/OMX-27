@@ -191,6 +191,8 @@ public:
 	OmxModeChords();
 	~OmxModeChords() {}
 
+	const String modeName = "Chords";
+
 	void InitSetup() override;
 
 	void onModeActivated() override;
