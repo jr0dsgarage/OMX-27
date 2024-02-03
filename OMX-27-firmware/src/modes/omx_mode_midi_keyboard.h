@@ -18,9 +18,12 @@ public:
 	OmxModeMidiKeyboard();
 	~OmxModeMidiKeyboard() {}
 
-	const String modeName = "MIDI Keyboard";
+	const char *modeName = "Midi Keyboard";
 
 	void InitSetup() override;
+
+	char* getModeName() override{return (char*)modeName;}
+
 	void onModeActivated() override;
 	void onModeDeactivated() override;
 
@@ -60,6 +63,8 @@ public:
 private:
 	bool initSetup = false;
 	bool organelleMotherMode = false; // TODO make separate class for this
+
+
 
 	MusicScales *musicScale;
 

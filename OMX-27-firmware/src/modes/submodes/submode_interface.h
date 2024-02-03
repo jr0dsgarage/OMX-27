@@ -10,7 +10,7 @@ public:
 	SubmodeInterface() {}
 	virtual ~SubmodeInterface() {}
 
-	const String *modeName; // name of the omxMode
+	virtual char *getModeName() { return nullptr; }
 
 	virtual void onModeChanged(){};
 

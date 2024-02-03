@@ -9,9 +9,11 @@ public:
 	OmxModeSequencer();
 	~OmxModeSequencer() {}
 
-	const String modeName = "Sequencer";
+	const char* modeName = "Sequencer";
 
 	void InitSetup() override;
+
+	char* getModeName() override{return (char*)modeName;}
 
 	void initPatterns(); // Initializes all patterns
 
