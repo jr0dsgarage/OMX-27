@@ -10,6 +10,8 @@ public:
 	SubmodeInterface() {}
 	virtual ~SubmodeInterface() {}
 
+	const String *modeName; // name of the omxMode
+
 	virtual void onModeChanged(){};
 
 	virtual void setEnabled(bool newEnabled);
