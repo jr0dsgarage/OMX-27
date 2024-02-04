@@ -871,6 +871,10 @@ void loop()
 void setup()
 {
 	Serial.begin(115200);
+	Serial.println(omx27ascii.c_str());
+	Serial.print("version: ");
+	Serial.print(OMX_VERSION.c_str());
+	Serial.print(" - ");
 	//	while( !Serial );
 #if T4
 	Serial.println("Teensy 4.0");
