@@ -976,11 +976,10 @@ void setup()
 	omxModeEuclid.SetScale(&globalScale);
 	omxModeChords.SetScale(&globalScale);
 
-	// Load from EEPROM
-	bool bLoaded = loadFromStorage();
-	if (!bLoaded)
+	// Load from STORAGE
+	if (loadFromStorage())
 	{
-		// Failed to load due to initialized EEPROM or version mismatch
+		// Failed to load due to initialized STORAGE or version mismatch
 		// defaults
 		sequencer.playingPattern = 0;
 		sysSettings.playingPattern = 0;
