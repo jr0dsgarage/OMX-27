@@ -5,14 +5,8 @@
 #include "../hardware/omx_disp.h"
 #include "../hardware/omx_leds.h"
 
-void OmxScreensaver::setScreenSaverColor()
-{
-	colorConfig.screensaverColor = map(potSettings.analog[4]->getValue(), potMinVal, potMaxVal, 0, 32764);
-}
-
 void OmxScreensaver::onPotChanged(int potIndex, int prevValue, int newValue, int analogDelta)
 {
-	//     colorConfig.screensaverColor = potSettings.analog[4]->getValue() * 4; // value is 0-32764 for strip.ColorHSV
 	setScreenSaverColor();
 
 	// reset screensaver
@@ -43,14 +37,25 @@ void OmxScreensaver::updateScreenSaverState()
 	}
 }
 
+void OmxScreensaver::setScreenSaverColor()
+{
+	// full color range is 0-65528, but its reduced here to avoid red color duplication, so it becomes 0-62613
+	colorConfig.screensaverColor = map(potSettings.analog[4]->getValue(), potMinVal, potMaxVal, 0, 62613);
+}
+
 bool OmxScreensaver::shouldShowScreenSaver()
 {
-	setScreenSaverColor();
 	return screenSaverActive;
 }
 
 void OmxScreensaver::onEncoderChanged(Encoder::Update enc)
 {
+	// Add debug statements to troubleshoot the code
+	Serial.println("onEncoderChanged function called.");
+	Serial.print("Encoder active? ");
+	Serial.println(enc.active());
+	Serial.print("Encoder direction: ");
+	Serial.println(enc.dir());
 }
 
 void OmxScreensaver::onKeyUpdate(OMXKeypadEvent e)
