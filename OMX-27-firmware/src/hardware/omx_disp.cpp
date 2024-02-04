@@ -28,10 +28,10 @@ void OmxDisp::drawStartupScreen()
 {
 	display.clearDisplay();
 	testdrawrect();
-	delay(200);
+	delay(700);
 	display.clearDisplay();
-	u8g2_display.setForegroundColor(WHITE);
-	u8g2_display.setBackgroundColor(BLACK);
+	//u8g2_display.setForegroundColor(WHITE);
+	//u8g2_display.setBackgroundColor(BLACK);
 	drawLoading();
 }
 
@@ -168,16 +168,34 @@ void OmxDisp::testdrawrect()
 		display.display(); // Update screen with each newly-drawn rectangle
 		delay(1);
 	}
-
-	delay(500);
 }
 
 void OmxDisp::drawLoading()
 {
+	// This function now just updates a single frame of the loading animation, and gets called
+	// multiple times through-out the setup phase
+
+	u8g2_display.setForegroundColor(WHITE);
+	u8g2_display.setBackgroundColor(BLACK);
+
+	// The loader array characters are from the u8g2_font_cu12_h_symbols font : ◰ ◱ ◲ ◳
 	const char *loader[] = {"\u25f0", "\u25f1", "\u25f2", "\u25f3"};
 	display.clearDisplay();
 	u8g2_display.setFontMode(0);
-	for (int16_t i = 0; i < 16; i += 1)
+	u8g2_display.setCursor(18, 18);
+	u8g2_display.setFont(FONT_TENFAT);
+	u8g2_display.print("OMX-27");
+	u8g2_display.setFont(FONT_SYMB_BIG);
+	u8g2centerText(loader[loaderCounter % 4], 80, 10, 32, 32);
+	display.display();
+	//delay(100);
+	Serial.print("...");
+	loaderCounter++;
+	if (loaderCounter > 3)
+	{
+		loaderCounter = 0;
+	}
+	/* for (int16_t i = 0; i < 16; i += 1)
 	{
 		display.clearDisplay();
 		u8g2_display.setCursor(18, 18);
@@ -188,8 +206,10 @@ void OmxDisp::drawLoading()
 		display.display();
 		delay(100);
 	}
+	*/
 
 	delay(100);
+
 }
 
 void OmxDisp::dispGridBoxes()

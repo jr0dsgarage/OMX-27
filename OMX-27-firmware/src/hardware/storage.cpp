@@ -12,9 +12,11 @@ Storage *Storage::initStorage()
 	// check if FRAM chip can be initialised
 	if (fram.begin())
 	{
+		Serial.println("FRAM detected");
 		return new FRAMStorage(fram);
 	}
 	// fall back to EEPROM
+	Serial.println("FRAM not detected, using EEPROM");
 	return new EEPROMStorage();
 }
 

@@ -189,6 +189,13 @@ void changeOmxMode(OMXMode newOmxmode)
 		break;
 	}
 
+	class OmxModeInterface {
+		// Add the "modeName" member variable
+		String modeName;
+	public:
+		// Rest of the class code...
+	};
+
 	activeOmxMode->onModeActivated();
 }
 
@@ -356,15 +363,16 @@ bool loadHeader(void)
 {
 	uint8_t version = storage->read(EEPROM_HEADER_ADDRESS + 0);
 
+
 	char buf[64];
-	snprintf(buf, sizeof(buf), "EEPROM Header Version is %d\n", version);
+	snprintf(buf, sizeof(buf), "EEPROM Header Version: %d\n", version);
 	Serial.print(buf);
 
 	// Uninitalized EEPROM memory is filled with 0xFF
 	if (version == 0xFF)
 	{
 		// EEPROM was uninitialized
-		Serial.println("version was 0xFF");
+		Serial.println("...version was 0xFF, EEPROM was uninitialized");
 		return false;
 	}
 
@@ -372,19 +380,21 @@ bool loadHeader(void)
 	{
 		// write an adapter if we ever need to increment the EEPROM version and also save the existing patterns
 		// for now, return false will essentially reset the state
-		Serial.println("version not matched");
+		Serial.println("EEPROM version mis-match!");
 		return false;
 	}
-
+omxDisp.drawLoading();
 	sysSettings.omxMode = (OMXMode)storage->read(EEPROM_HEADER_ADDRESS + 1);
-
+	Serial.println((String) "omxMode Loaded");
+omxDisp.drawLoading();
 	sequencer.playingPattern = storage->read(EEPROM_HEADER_ADDRESS + 2);
 	sysSettings.playingPattern = sequencer.playingPattern;
-
+	Serial.println("Playing Pattern Loaded");
+omxDisp.drawLoading();
 	uint8_t unMidiChannel = storage->read(EEPROM_HEADER_ADDRESS + 3);
 	sysSettings.midiChannel = unMidiChannel + 1;
+	Serial.println((String) "Midi Channel Loaded: ");
 
-	Serial.println("Loading banks");
 	for (int b = 0; b < NUM_CC_BANKS; b++)
 	{
 		for (int i = 0; i < NUM_CC_POTS; i++)
@@ -392,25 +402,32 @@ bool loadHeader(void)
 			pots[b][i] = storage->read(EEPROM_HEADER_ADDRESS + 4 + i + (5 * b));
 		}
 	}
-
+	Serial.println("...CC banks loaded");
+omxDisp.drawLoading();
 	uint8_t midiMacroChannel = storage->read(EEPROM_HEADER_ADDRESS + 29);
 	midiMacroConfig.midiMacroChan = midiMacroChannel + 1;
-
+	Serial.println("Midi Macro Channel Loaded");
+omxDisp.drawLoading();
 	uint8_t midiMacro = storage->read(EEPROM_HEADER_ADDRESS + 30);
 	midiMacroConfig.midiMacro = midiMacro;
-
+	Serial.println("Midi Macro Loaded");
+omxDisp.drawLoading();
 	uint8_t scaleRoot = storage->read(EEPROM_HEADER_ADDRESS + 31);
 	scaleConfig.scaleRoot = scaleRoot;
-
+	Serial.println("Scale Root Loaded");
+omxDisp.drawLoading();
 	int8_t scalePattern = (int8_t)storage->read(EEPROM_HEADER_ADDRESS + 32);
 	scaleConfig.scalePattern = scalePattern;
-
+	Serial.println("Scale Pattern Loaded");
+omxDisp.drawLoading();
 	bool lockScale = (bool)storage->read(EEPROM_HEADER_ADDRESS + 33);
 	scaleConfig.lockScale = lockScale;
-
+	Serial.println("Scale Lock Set");
+omxDisp.drawLoading();
 	bool scaleGrp16 = (bool)storage->read(EEPROM_HEADER_ADDRESS + 34);
 	scaleConfig.group16 = scaleGrp16;
-
+	Serial.println("Scale Group16 Set");
+omxDisp.drawLoading();
 	globalScale.calculateScale(scaleConfig.scaleRoot, scaleConfig.scalePattern);
 
 	return true;
@@ -492,13 +509,17 @@ void loadPatterns(void)
 {
 	bool isEeprom = storage->isEeprom();
 
+	Serial.println((String)"Is EEPROM? " + isEeprom);
+
 	int patternSize = serializedPatternSize(isEeprom);
+	Serial.println((String)"Seq patternSize: "+ patternSize);
 	int nLocalAddress = EEPROM_PATTERN_ADDRESS;
 
 	Serial.print("Seq patterns - nLocalAddress: ");
 	Serial.println(nLocalAddress);
 
 	int seqPatternNum = isEeprom ? NUM_SEQ_PATTERNS_EEPROM : NUM_SEQ_PATTERNS;
+	Serial.println((String)"Seq patternNum: " + seqPatternNum);
 
 	for (int i = 0; i < seqPatternNum; i++)
 	{
@@ -506,7 +527,9 @@ void loadPatterns(void)
 		auto current = (byte *)&pattern;
 		for (int j = 0; j < patternSize; j++)
 		{
+			omxDisp.drawLoading();
 			*current = storage->read(nLocalAddress + j);
+			Serial.print(nLocalAddress + j);
 			current++;
 		}
 		sequencer.patterns[i] = pattern;
@@ -534,6 +557,7 @@ void loadPatterns(void)
 		auto current = (byte *)&pattern;
 		for (int j = 0; j < patternSize; j++)
 		{
+			omxDisp.drawLoading();
 			*current = storage->read(nLocalAddress + j);
 			current++;
 		}
@@ -560,6 +584,7 @@ void loadPatterns(void)
 	Serial.print("Loading MidiFX - ");
 	for (uint8_t i = 0; i < NUM_MIDIFX_GROUPS; i++)
 	{
+omxDisp.drawLoading();
 		nLocalAddress = subModeMidiFx[i].loadFromDisk(nLocalAddress, storage);
 		// Serial.println((String)"Loaded: " + i);
 		// Serial.println((String)"nLocalAddress: " + nLocalAddress);
@@ -598,24 +623,27 @@ bool loadFromStorage(void)
 	// This load can happen soon after Serial.begin - enable this 'wait for Serial' if you need to Serial.print during loading
 	// while( !Serial );
 
-	Serial.println("Read the header");
-	bool bContainedData = loadHeader();
+	Serial.println("Reading saved Data from the header...");
 
-	if (bContainedData)
+
+	Serial.println("Reading saved Data from the header...");
+	if (loadHeader())
 	{
-		Serial.println("Loading patterns");
+		Serial.println("...Header Data loaded and applied");
+
+		Serial.println("Loading patterns...");
 		loadPatterns();
 		changeOmxMode(sysSettings.omxMode);
 
-		omxDisp.isDirty();
-		omxLeds.isDirty();
+		//omxDisp.isDirty();
+		//omxLeds.isDirty();
 		return true;
 	}
 
-	Serial.println("-- Failed to load --");
+	Serial.println("!! Failed to load from Storage !!");
 
-	omxDisp.isDirty();
-	omxLeds.isDirty();
+	//omxDisp.isDirty();
+	//omxLeds.isDirty();
 
 	return false;
 }
@@ -859,18 +887,23 @@ void loop()
 	ram.run();
 #endif
 
-} // ######## END MAIN LOOP ########
+}
 
-// ####### SETUP #######
+// ######## END MAIN LOOP ########
+
+
+/*************************** SETUP ***************************/
 
 void setup()
 {
 	Serial.begin(115200);
+	//	while( !Serial ); // wait for serial port to connect.
+
 	Serial.println(omx27ascii.c_str());
-	Serial.print("version: ");
+	Serial.print("Firmware version: ");
 	Serial.print(OMX_VERSION.c_str());
 	Serial.print(" - ");
-	//	while( !Serial );
+
 #if T4
 	Serial.println("Teensy 4.0");
 	// 	Serial.println("DAC Start!");
@@ -878,36 +911,43 @@ void setup()
 #else
 	Serial.println("Teensy 3.2");
 #endif
-	// Init Display
-	omxDisp.setup();
+	Serial.println("Beginning Setup...");
 
-	// Startup screen
+/***************************   Display   ***************************/
+	omxDisp.setup();
+	Serial.println("...Display setup complete!");
+
+	Serial.println("Booting...");
 	omxDisp.drawStartupScreen();
 
-	// Storage
+/*************************** EEPROM INIT ***************************/
+	omxDisp.drawLoading();
 	storage = Storage::initStorage();
 	sysEx = new SysEx(storage, &sysSettings);
+	Serial.println("Storage setup complete!");
+
 
 #ifdef RAM_MONITOR
+/*************************** RAM Monitor ***************************/
+	omxDisp.drawLoading();
 	ram.initialize();
+	Serial.println("RAM Monitor initialized!");
 #endif
 
-	// incoming usbMIDI callbacks
+/*************************** MIDI Handles **************************/
+	omxDisp.drawLoading();
 	usbMIDI.setHandleNoteOff(OnNoteOff);
 	usbMIDI.setHandleNoteOn(OnNoteOn);
 	usbMIDI.setHandleControlChange(OnControlChange);
 	usbMIDI.setHandleSystemExclusive(OnSysEx);
+	Serial.println("MIDI handles set!");
 
-	// clksTimer = 0; // TODO - didn't see this used anywhere
-	omxScreensaver.resetCounter();
-	// ssstep = 0;
 
+/***************************   HW MIDI   ***************************/
+	omxDisp.drawLoading();
 	lastProcessTime = micros();
 	omxUtil.resetClocks();
-
-	// HW MIDI
 	MM::begin();
-
 	randomSeed(analogRead(13));
 	srand(analogRead(13));
 
@@ -923,11 +963,13 @@ void setup()
 	// ENCODER BUTTON pin
 	pinMode(buttonPin, INPUT_PULLUP);
 
-	// initialize ANALOG INPUTS and ResponsiveAnalogRead
+	Serial.println("HW MIDI setup complete!");
+
+/***************************    POTS    ***************************/
+	omxDisp.drawLoading();
+
 	for (int i = 0; i < potCount; i++)
-	{
-		// 		potSettings.analog[i] = new ResponsiveAnalogRead(0, true, .001);
-		// 		potSettings.analog[i]->setAnalogResolution(1 << 13);
+	{// initialize ANALOG INPUTS and ResponsiveAnalogRead
 		pinMode(analogPins[i], INPUT);
 		potSettings.analog[i] = new ResponsiveAnalogRead(analogPins[i], true, .001);
 
@@ -943,6 +985,11 @@ void setup()
 		lastMidiValue[i] = 0;
 	}
 
+	Serial.println("Pots initialized!");
+
+/***************************     DAC    ***************************/
+	omxDisp.drawLoading();
+
 	// set DAC Resolution CV/GATE
 	RES = 12;
 	AMAX = pow(2, RES);
@@ -955,6 +1002,11 @@ void setup()
 	analogWrite(CVPITCH_PIN, 0);
 #endif
 
+	Serial.println("DAC setup complete!");
+
+/***************************   Scales   ***************************/
+	omxDisp.drawLoading();
+
 	globalScale.calculateScale(scaleConfig.scaleRoot, scaleConfig.scalePattern);
 	omxModeMidi.SetScale(&globalScale);
 	omxModeSeq.SetScale(&globalScale);
@@ -962,12 +1014,19 @@ void setup()
 	omxModeEuclid.SetScale(&globalScale);
 	omxModeChords.SetScale(&globalScale);
 
-	// Load from EEPROM
-	bool bLoaded = loadFromStorage();
-	if (!bLoaded)
+	Serial.println("Scales setup complete!");
+
+
+/************************** EEPROM Load **************************/
+	omxDisp.drawLoading();
+	Serial.print("\n");
+	Serial.println("Loading from EEPROM...");
+
+	if (!loadFromStorage())
 	{
 		// Failed to load due to initialized EEPROM or version mismatch
 		// defaults
+		Serial.println("...EEPROM failed to load, initializing defaults");
 		// sysSettings.omxMode = DEFAULT_MODE;
 		sequencer.playingPattern = 0;
 		sysSettings.playingPattern = 0;
@@ -985,17 +1044,26 @@ void setup()
 		saveToStorage();
 	}
 
-	// Keypad
-	//	customKeypad.begin();
+	Serial.println("...EEPROM loaded!");
+
+/************************* Screensaver **************************/
+	omxDisp.drawLoading();
+	omxScreensaver.resetCounter();
+
+
+/***************************  Keypad  ***************************/
+	omxDisp.drawLoading();
 	keypad.begin();
 
-	// LEDs
+/***************************   LEDS   ***************************/
+	omxDisp.drawLoading();
 	omxLeds.initSetup();
 
+	Serial.println("Setup Complete!");
 
 #ifdef RAM_MONITOR
 	reporttime = millis();
 #endif
 }
 
-// ####### END SETUP #######
+/************************** END SETUP ***************************/

@@ -83,6 +83,8 @@ public:
 private:
 	int hline = 8;
 	int messageTextTimer = 0;
+	int loaderCounter = 0;
+
 	bool dirtyDisplay = false;
 
 	String currentMsg;
