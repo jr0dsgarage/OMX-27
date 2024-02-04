@@ -315,45 +315,45 @@ void OnSysEx(const uint8_t *data, uint16_t length, bool complete)
 
 void saveHeader()
 {
-	// 1 byte for EEPROM version
-	storage->write(EEPROM_HEADER_ADDRESS + 0, EEPROM_VERSION);
+	// 1 byte for STORAGE version
+	storage->write(STORAGE_HEADER_ADDRESS + 0, STORAGE_VERSION);
 
 	// 1 byte for mode
-	storage->write(EEPROM_HEADER_ADDRESS + 1, (uint8_t)sysSettings.omxMode);
+	storage->write(STORAGE_HEADER_ADDRESS + 1, (uint8_t)sysSettings.omxMode);
 
 	// 1 byte for the active pattern
-	storage->write(EEPROM_HEADER_ADDRESS + 2, (uint8_t)sequencer.playingPattern);
+	storage->write(STORAGE_HEADER_ADDRESS + 2, (uint8_t)sequencer.playingPattern);
 
 	// 1 byte for Midi channel
 	uint8_t unMidiChannel = (uint8_t)(sysSettings.midiChannel - 1);
-	storage->write(EEPROM_HEADER_ADDRESS + 3, unMidiChannel);
+	storage->write(STORAGE_HEADER_ADDRESS + 3, unMidiChannel);
 
 	for (int b = 0; b < NUM_CC_BANKS; b++)
 	{
 		for (int i = 0; i < NUM_CC_POTS; i++)
 		{
-			storage->write(EEPROM_HEADER_ADDRESS + 4 + i + (5 * b), pots[b][i]);
+			storage->write(STORAGE_HEADER_ADDRESS + 4 + i + (5 * b), pots[b][i]);
 		}
 	}
 	// Last is 28
 
 	uint8_t midiMacroChan = (uint8_t)(midiMacroConfig.midiMacroChan - 1);
-	storage->write(EEPROM_HEADER_ADDRESS + 29, midiMacroChan);
+	storage->write(STORAGE_HEADER_ADDRESS + 29, midiMacroChan);
 
 	uint8_t midiMacroId = (uint8_t)midiMacroConfig.midiMacro;
-	storage->write(EEPROM_HEADER_ADDRESS + 30, midiMacroId);
+	storage->write(STORAGE_HEADER_ADDRESS + 30, midiMacroId);
 
 	uint8_t scaleRoot = (uint8_t)scaleConfig.scaleRoot;
-	storage->write(EEPROM_HEADER_ADDRESS + 31, scaleRoot);
+	storage->write(STORAGE_HEADER_ADDRESS + 31, scaleRoot);
 
 	uint8_t scalePattern = (uint8_t)scaleConfig.scalePattern;
-	storage->write(EEPROM_HEADER_ADDRESS + 32, scalePattern);
+	storage->write(STORAGE_HEADER_ADDRESS + 32, scalePattern);
 
 	uint8_t lockScale = (uint8_t)scaleConfig.lockScale;
-	storage->write(EEPROM_HEADER_ADDRESS + 33, lockScale);
+	storage->write(STORAGE_HEADER_ADDRESS + 33, lockScale);
 
 	uint8_t scaleGrp16 = (uint8_t)scaleConfig.group16;
-	storage->write(EEPROM_HEADER_ADDRESS + 34, scaleGrp16);
+	storage->write(STORAGE_HEADER_ADDRESS + 34, scaleGrp16);
 
 	// 35 bytes
 }
@@ -362,34 +362,34 @@ void saveHeader()
 // false means we shouldn't attempt to load any further information
 bool loadHeader(void)
 {
-	uint8_t version = storage->read(EEPROM_HEADER_ADDRESS + 0);
+	uint8_t version = storage->read(STORAGE_HEADER_ADDRESS + 0);
 
 	char buf[64];
-	snprintf(buf, sizeof(buf), "EEPROM Header Version is %d\n", version);
+	snprintf(buf, sizeof(buf), "Storage Header Version is %d\n", version);
 	Serial.print(buf);
 
-	// Uninitalized EEPROM memory is filled with 0xFF
+	// Uninitalized Storage memory is filled with 0xFF
 	if (version == 0xFF)
 	{
-		// EEPROM was uninitialized
-		Serial.println("version was 0xFF");
+		// Storage was uninitialized
+		Serial.println("Storage version was 0xFF, aka uninitialized");
 		return false;
 	}
 
-	if (version != EEPROM_VERSION)
+	if (version != STORAGE_VERSION)
 	{
-		// write an adapter if we ever need to increment the EEPROM version and also save the existing patterns
+		// write an adapter if we ever need to increment the STORAGE version and also save the existing patterns
 		// for now, return false will essentially reset the state
-		Serial.println("version not matched");
+		Serial.println("Storage version not matched");
 		return false;
 	}
 
-	sysSettings.omxMode = (OMXMode)storage->read(EEPROM_HEADER_ADDRESS + 1);
+	sysSettings.omxMode = (OMXMode)storage->read(STORAGE_HEADER_ADDRESS + 1);
 
-	sequencer.playingPattern = storage->read(EEPROM_HEADER_ADDRESS + 2);
+	sequencer.playingPattern = storage->read(STORAGE_HEADER_ADDRESS + 2);
 	sysSettings.playingPattern = sequencer.playingPattern;
 
-	uint8_t unMidiChannel = storage->read(EEPROM_HEADER_ADDRESS + 3);
+	uint8_t unMidiChannel = storage->read(STORAGE_HEADER_ADDRESS + 3);
 	sysSettings.midiChannel = unMidiChannel + 1;
 
 	Serial.println("Loading banks");
@@ -397,26 +397,26 @@ bool loadHeader(void)
 	{
 		for (int i = 0; i < NUM_CC_POTS; i++)
 		{
-			pots[b][i] = storage->read(EEPROM_HEADER_ADDRESS + 4 + i + (5 * b));
+			pots[b][i] = storage->read(STORAGE_HEADER_ADDRESS + 4 + i + (5 * b));
 		}
 	}
 
-	uint8_t midiMacroChannel = storage->read(EEPROM_HEADER_ADDRESS + 29);
+	uint8_t midiMacroChannel = storage->read(STORAGE_HEADER_ADDRESS + 29);
 	midiMacroConfig.midiMacroChan = midiMacroChannel + 1;
 
-	uint8_t midiMacro = storage->read(EEPROM_HEADER_ADDRESS + 30);
+	uint8_t midiMacro = storage->read(STORAGE_HEADER_ADDRESS + 30);
 	midiMacroConfig.midiMacro = midiMacro;
 
-	uint8_t scaleRoot = storage->read(EEPROM_HEADER_ADDRESS + 31);
+	uint8_t scaleRoot = storage->read(STORAGE_HEADER_ADDRESS + 31);
 	scaleConfig.scaleRoot = scaleRoot;
 
-	int8_t scalePattern = (int8_t)storage->read(EEPROM_HEADER_ADDRESS + 32);
+	int8_t scalePattern = (int8_t)storage->read(STORAGE_HEADER_ADDRESS + 32);
 	scaleConfig.scalePattern = scalePattern;
 
-	bool lockScale = (bool)storage->read(EEPROM_HEADER_ADDRESS + 33);
+	bool lockScale = (bool)storage->read(STORAGE_HEADER_ADDRESS + 33);
 	scaleConfig.lockScale = lockScale;
 
-	bool scaleGrp16 = (bool)storage->read(EEPROM_HEADER_ADDRESS + 34);
+	bool scaleGrp16 = (bool)storage->read(STORAGE_HEADER_ADDRESS + 34);
 	scaleConfig.group16 = scaleGrp16;
 
 	globalScale.calculateScale(scaleConfig.scaleRoot, scaleConfig.scalePattern);
@@ -429,7 +429,7 @@ void savePatterns(void)
 	bool isEeprom = storage->isEeprom();
 
 	int patternSize = serializedPatternSize(isEeprom);
-	int nLocalAddress = EEPROM_PATTERN_ADDRESS;
+	int nLocalAddress = STORAGE_PATTERN_ADDRESS;
 
 	// Serial.println((String)"Seq patternSize: " + patternSize);
 	int seqPatternNum = isEeprom ? NUM_SEQ_PATTERNS_EEPROM : NUM_SEQ_PATTERNS;
@@ -501,7 +501,7 @@ void loadPatterns(void)
 	bool isEeprom = storage->isEeprom();
 
 	int patternSize = serializedPatternSize(isEeprom);
-	int nLocalAddress = EEPROM_PATTERN_ADDRESS;
+	int nLocalAddress = STORAGE_PATTERN_ADDRESS;
 
 	Serial.print("Seq patterns - nLocalAddress: ");
 	Serial.println(nLocalAddress);
@@ -798,7 +798,6 @@ void loop()
 		{
 			// temp - save whenever the 0 key is pressed in encoder edit mode
 			saveToStorage();
-			//	Serial.println("EEPROM saved");
 			omxDisp.displayMessage("Saved State");
 			encoderConfig.enc_edit = false;
 			omxLeds.setAllLEDS(0, 0, 0);
@@ -983,7 +982,6 @@ void setup()
 	{
 		// Failed to load due to initialized EEPROM or version mismatch
 		// defaults
-		// sysSettings.omxMode = DEFAULT_MODE;
 		sequencer.playingPattern = 0;
 		sysSettings.playingPattern = 0;
 		sysSettings.midiChannel = 1;
