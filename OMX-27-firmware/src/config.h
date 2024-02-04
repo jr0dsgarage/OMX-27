@@ -64,11 +64,11 @@ enum FUNCKEYMODE
 };
 
 // Increment this when data layout in EEPROM changes. May need to write version upgrade readers when this changes.
-extern const uint8_t EEPROM_VERSION;
+extern const uint8_t STORAGE_VERSION;
 
-#define EEPROM_HEADER_ADDRESS 0
-#define EEPROM_HEADER_SIZE 34
-#define EEPROM_PATTERN_ADDRESS 64
+#define STORAGE_HEADER_ADDRESS 0
+#define STORAGE_HEADER_SIZE 34
+#define STORAGE_PATTERN_ADDRESS 64
 
 // next address 1104 (was 1096 before clock)
 

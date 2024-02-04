@@ -88,15 +88,15 @@ void SysEx::updateSettingsBlockAndStore(const uint8_t *configFromSysex, unsigned
 void SysEx::loadGlobals(void)
 {
 	// 	uint8_t version = this->storage->read(EEPROM_HEADER_ADDRESS + 0);
-	this->settings->omxMode = (OMXMode)this->storage->read(EEPROM_HEADER_ADDRESS + 1);
-	this->settings->playingPattern = this->storage->read(EEPROM_HEADER_ADDRESS + 2);
-	uint8_t unMidiChannel = this->storage->read(EEPROM_HEADER_ADDRESS + 3);
+	this->settings->omxMode = (OMXMode)this->storage->read(STORAGE_HEADER_ADDRESS + 1);
+	this->settings->playingPattern = this->storage->read(STORAGE_HEADER_ADDRESS + 2);
+	uint8_t unMidiChannel = this->storage->read(STORAGE_HEADER_ADDRESS + 3);
 	this->settings->midiChannel = unMidiChannel + 1;
 	for (int b = 0; b < NUM_CC_BANKS; b++)
 	{
 		for (int i = 0; i < NUM_CC_POTS; i++)
 		{
-			pots[b][i] = this->storage->read(EEPROM_HEADER_ADDRESS + 4 + i + (5 * b));
+			pots[b][i] = this->storage->read(STORAGE_HEADER_ADDRESS + 4 + i + (5 * b));
 		}
 	}
 	this->settings->refresh = true;
@@ -105,7 +105,7 @@ void SysEx::loadGlobals(void)
 void SysEx::sendCurrentState()
 {
 	//   0F - "c0nFig" - outputs its config:
-	uint8_t sysexData[EEPROM_HEADER_SIZE + 8];
+	uint8_t sysexData[STORAGE_HEADER_SIZE + 8];
 
 	sysexData[0] = 0x7d; // manufacturer
 	sysexData[1] = 0x00;
@@ -128,11 +128,11 @@ void SysEx::sendCurrentState()
 	// 	00
 	// 	00
 
-	uint8_t buffer[EEPROM_HEADER_SIZE];
-	this->storage->readArray(0, buffer, EEPROM_HEADER_SIZE);
+	uint8_t buffer[STORAGE_HEADER_SIZE];
+	this->storage->readArray(0, buffer, STORAGE_HEADER_SIZE);
 
 	int offset = 8;
-	for (int i = 0; i < EEPROM_HEADER_SIZE; i++)
+	for (int i = 0; i < STORAGE_HEADER_SIZE; i++)
 	{
 		int data = buffer[i];
 		if (data == 0xff)
@@ -142,5 +142,5 @@ void SysEx::sendCurrentState()
 		sysexData[i + offset] = data;
 	}
 
-	MM::sendSysEx(EEPROM_HEADER_SIZE + offset, sysexData, false);
+	MM::sendSysEx(STORAGE_HEADER_SIZE + offset, sysexData, false);
 }
