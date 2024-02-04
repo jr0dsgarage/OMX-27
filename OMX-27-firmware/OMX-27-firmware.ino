@@ -183,6 +183,9 @@ void changeOmxMode(OMXMode newOmxmode)
 	case MODE_EUCLID:
 		activeOmxMode = &omxModeEuclid;
 		break;
+	case MODE_SS:
+		activeOmxMode = &omxScreensaver;
+		break;
 	default:
 		omxModeMidi.setMidiMode();
 		activeOmxMode = &omxModeMidi;
@@ -658,9 +661,17 @@ void loop()
 
 	// ############### SLEEP MODE ###############
 	//
-	//	Serial.println(screenSaverCounter);
+	//	Serial.println(omxScreensaver.screenSaverCounter);
 	omxScreensaver.updateScreenSaverState();
-	sysSettings.screenSaverMode = omxScreensaver.shouldShowScreenSaver();
+	if (omxScreensaver.shouldShowScreenSaver())
+	{
+		omxScreensaver.setScreenSaverColor();
+		sysSettings.screenSaverMode = true;
+	}
+	else
+	{
+		sysSettings.screenSaverMode = false;
+	}
 
 	// ############### POTS ###############
 	//
@@ -687,10 +698,10 @@ void loop()
 	auto u = myEncoder.update();
 	if (u.active())
 	{
-		auto amt = u.accel(1);		   // where 5 is the acceleration factor if you want it, 0 if you don't)
-		omxScreensaver.resetCounter(); // screenSaverCounter = 0;
-									   //    	Serial.println(u.dir() < 0 ? "ccw " : "cw ");
-									   //    	Serial.println(amt);
+		auto amt = u.accel(1); // where 5 is the acceleration factor if you want it, 0 if you don't)
+		//omxScreensaver.resetCounter(); // screenSaverCounter = 0;
+		//Serial.println(u.dir() < 0 ? "ccw " : "cw ");
+		//Serial.println(amt);
 
 		// Change Mode
 		if (encoderConfig.enc_edit)
@@ -715,9 +726,8 @@ void loop()
 	switch (s)
 	{
 	// SHORT PRESS
-	case Button::Down:				   // Serial.println("Button down");
-		omxScreensaver.resetCounter(); // screenSaverCounter = 0;
-
+	case Button::Down:
+		omxScreensaver.resetCounter();
 		// what page are we on?
 		if (sysSettings.newmode != sysSettings.omxMode && encoderConfig.enc_edit)
 		{
@@ -997,6 +1007,7 @@ void setup()
 	// LEDs
 	omxLeds.initSetup();
 
+	omxScreensaver.InitSetup();
 
 #ifdef RAM_MONITOR
 	reporttime = millis();
