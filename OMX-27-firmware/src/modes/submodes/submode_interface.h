@@ -10,6 +10,8 @@ public:
 	SubmodeInterface() {}
 	virtual ~SubmodeInterface() {}
 
+	virtual char *getModeName() { return nullptr; }
+
 	virtual void onModeChanged(){};
 
 	virtual void setEnabled(bool newEnabled);

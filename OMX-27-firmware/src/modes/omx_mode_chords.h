@@ -1,4 +1,5 @@
 #pragma once
+#include <string>
 #include "../modes/omx_mode_interface.h"
 #include "../utils/music_scales.h"
 // #include "../consts/colors.h"
@@ -191,7 +192,11 @@ public:
 	OmxModeChords();
 	~OmxModeChords() {}
 
+	const char *modeName = "Chords";
+
 	void InitSetup() override;
+
+	char* getModeName() override{return (char*)modeName;}
 
 	void onModeActivated() override;
 	void onModeDeactivated() override;

@@ -16,6 +16,10 @@ public:
 	SubModeMidiFxGroup();
 	~SubModeMidiFxGroup() {}
 
+	const char *modeName = "Midi FX Group";
+
+	char* getModeName() override{return (char*)modeName;}
+
 	// Interface methods
 	void onModeChanged() override;
 	void onClockTick() override;

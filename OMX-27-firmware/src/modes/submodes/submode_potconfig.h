@@ -10,6 +10,10 @@ public:
 	SubModePotConfig();
 	~SubModePotConfig() {}
 
+	const char *modeName = "Pot Config";
+
+	char* getModeName() override{return (char*)modeName;}
+
 	// Interface methods
 	void loopUpdate() override;
 	bool updateLEDs() override;

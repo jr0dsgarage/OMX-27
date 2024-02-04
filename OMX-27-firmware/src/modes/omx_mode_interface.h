@@ -1,14 +1,20 @@
 #pragma once
+#include <string>
 #include "../ClearUI/ClearUI_Input.h"
 #include "../hardware/omx_keypad.h"
 #include "../config.h"
 class OmxModeInterface
 {
+
 public:
 	OmxModeInterface() {}
 	virtual ~OmxModeInterface() {}
 
+	const char* modeName;
+
 	virtual void InitSetup() {} // Called once when mode is created
+
+	virtual char *getModeName() { return nullptr; }
 
 	virtual void onModeActivated() {}	// Called whenever entering mode
 	virtual void onModeDeactivated() {} // Called whenever entering mode
@@ -35,4 +41,5 @@ public:
 	virtual void inMidiNoteOn(byte channel, byte note, byte velocity) {}
 	virtual void inMidiNoteOff(byte channel, byte note, byte velocity) {}
 	virtual void inMidiControlChange(byte channel, byte control, byte value) {}
+
 };

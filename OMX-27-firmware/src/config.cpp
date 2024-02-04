@@ -58,7 +58,7 @@ const int PPQ = 96;
 
 const char *mfxOffMsg = "MidiFX are Off";
 
-const char *modes[] = {"MI", "CH", "S1", "S2", "GR", "EL", "OM"};
+const char *modes[] = {"MI", "CH", "S1", "S2", "GR", "EL", "OM", "SS"};
 const char *macromodes[] = {"Off", "M8", "NRN"};
 const int nummacromodes = 2;
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include "omx_mode_interface.h"
 #include "../utils/music_scales.h"
 #include "../utils/param_manager.h"
@@ -12,11 +13,17 @@
 
 class OmxModeMidiKeyboard : public OmxModeInterface
 {
+
 public:
 	OmxModeMidiKeyboard();
 	~OmxModeMidiKeyboard() {}
 
+	const char *modeName = "Midi Keyboard";
+
 	void InitSetup() override;
+
+	char* getModeName() override{return (char*)modeName;}
+
 	void onModeActivated() override;
 	void onModeDeactivated() override;
 
@@ -56,6 +63,8 @@ public:
 private:
 	bool initSetup = false;
 	bool organelleMotherMode = false; // TODO make separate class for this
+
+
 
 	MusicScales *musicScale;
 

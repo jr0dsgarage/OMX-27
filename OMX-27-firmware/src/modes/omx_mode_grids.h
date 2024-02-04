@@ -12,9 +12,13 @@ class OmxModeGrids : public OmxModeInterface
 {
 public:
 	OmxModeGrids();
-	~OmxModeGrids() {}
+	~OmxModeGrids(){};
+
+	const char *modeName = "Grids";
 
 	void InitSetup() override;
+
+	char* getModeName() override{return (char*)modeName;}
 
 	void onModeActivated() override;
 	void onModeDeactivated() override;

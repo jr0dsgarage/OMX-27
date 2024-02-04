@@ -21,7 +21,11 @@ public:
 	OmxModeEuclidean();
 	~OmxModeEuclidean() {}
 
+	const char *modeName = "Euclidean";
+
 	void InitSetup() override;
+
+	char* getModeName() override{return (char*)modeName;}
 
 	void onModeActivated() override;
 	void onModeDeactivated() override;
