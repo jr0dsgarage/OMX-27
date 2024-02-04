@@ -32,7 +32,6 @@ void OmxDisp::drawStartupScreen()
 	display.clearDisplay();
 	//u8g2_display.setForegroundColor(WHITE);
 	//u8g2_display.setBackgroundColor(BLACK);
-	drawLoading();
 }
 
 void OmxDisp::displayMessage(String msg)
@@ -166,7 +165,6 @@ void OmxDisp::testdrawrect()
 	{
 		display.drawRect(i, i, display.width() - 2 * i, display.height() - 2 * i, SSD1306_WHITE);
 		display.display(); // Update screen with each newly-drawn rectangle
-		delay(1);
 	}
 }
 
@@ -181,35 +179,26 @@ void OmxDisp::drawLoading()
 	// The loader array characters are from the u8g2_font_cu12_h_symbols font : ◰ ◱ ◲ ◳
 	const char *loader[] = {"\u25f0", "\u25f1", "\u25f2", "\u25f3"};
 	display.clearDisplay();
+
 	u8g2_display.setFontMode(0);
 	u8g2_display.setCursor(18, 18);
 	u8g2_display.setFont(FONT_TENFAT);
 	u8g2_display.print("OMX-27");
 	u8g2_display.setFont(FONT_SYMB_BIG);
+
+	//loop through the 4 symbols in the loader array
 	u8g2centerText(loader[loaderCounter % 4], 80, 10, 32, 32);
+
 	display.display();
-	//delay(100);
+
 	Serial.print("...");
 	loaderCounter++;
 	if (loaderCounter > 3)
 	{
 		loaderCounter = 0;
 	}
-	/* for (int16_t i = 0; i < 16; i += 1)
-	{
-		display.clearDisplay();
-		u8g2_display.setCursor(18, 18);
-		u8g2_display.setFont(FONT_TENFAT);
-		u8g2_display.print("OMX-27");
-		u8g2_display.setFont(FONT_SYMB_BIG);
-		u8g2centerText(loader[i % 4], 80, 10, 32, 32); // "\u00BB\u00AB" // // dice: "\u2685"
-		display.display();
-		delay(100);
-	}
-	*/
 
-	delay(100);
-
+	delay(50);
 }
 
 void OmxDisp::dispGridBoxes()

@@ -402,6 +402,7 @@ bool loadHeader(void)
 
 	for (int b = 0; b < NUM_CC_BANKS; b++)
 	{
+		omxDisp.drawLoading();
 		for (int i = 0; i < NUM_CC_POTS; i++)
 		{
 			pots[b][i] = storage->read(STORAGE_HEADER_ADDRESS + 4 + i + (5 * b));
@@ -428,6 +429,7 @@ bool loadHeader(void)
 	Serial.println("Scale Group16 Set");
 omxDisp.drawLoading();
 	globalScale.calculateScale(scaleConfig.scaleRoot, scaleConfig.scalePattern);
+	Serial.println("Scale Calculated");
 
 	return true;
 }
@@ -522,13 +524,12 @@ void loadPatterns(void)
 
 	for (int i = 0; i < seqPatternNum; i++)
 	{
+		omxDisp.drawLoading();
 		auto pattern = Pattern{};
 		auto current = (byte *)&pattern;
 		for (int j = 0; j < patternSize; j++)
 		{
-			omxDisp.drawLoading();
 			*current = storage->read(nLocalAddress + j);
-			Serial.print(nLocalAddress + j);
 			current++;
 		}
 		sequencer.patterns[i] = pattern;
@@ -552,11 +553,11 @@ void loadPatterns(void)
 
 	for (int i = 0; i < numPatterns; i++)
 	{
+		omxDisp.drawLoading();
 		auto pattern = grids::SnapShotSettings{};
 		auto current = (byte *)&pattern;
 		for (int j = 0; j < patternSize; j++)
 		{
-			omxDisp.drawLoading();
 			*current = storage->read(nLocalAddress + j);
 			current++;
 		}
@@ -624,8 +625,6 @@ bool loadFromStorage(void)
 
 	Serial.println("Reading saved Data from the header...");
 
-
-	Serial.println("Reading saved Data from the header...");
 	if (loadHeader())
 	{
 		Serial.println("...Header Data loaded and applied");
@@ -922,10 +921,10 @@ void setup()
 	omxDisp.setup();
 	Serial.println("...Display setup complete!");
 
-	Serial.println("Booting...");
+	Serial.println("Begin ...");
 	omxDisp.drawStartupScreen();
 
-/*************************** EEPROM INIT ***************************/
+/*************************** STORAGE INIT ***************************/
 	omxDisp.drawLoading();
 	storage = Storage::initStorage();
 	sysEx = new SysEx(storage, &sysSettings);
@@ -1025,7 +1024,7 @@ void setup()
 /************************** EEPROM Load **************************/
 	omxDisp.drawLoading();
 	Serial.print("\n");
-	Serial.println("Loading from EEPROM...");
+	Serial.println("Loading from FRAM/EEPROM...");
 
 	if (!loadFromStorage())
 	{
@@ -1044,24 +1043,25 @@ void setup()
 		omxModeSeq.initPatterns();
 
 		changeOmxMode(DEFAULT_MODE);
-		// initPatterns();
 		saveToStorage();
 	}
 
-	Serial.println("...EEPROM loaded!");
-
-/************************* Screensaver **************************/
-	omxDisp.drawLoading();
-	omxScreensaver.resetCounter();
-
+	Serial.println("...Memory Loaded!");
 
 /***************************  Keypad  ***************************/
 	omxDisp.drawLoading();
 	keypad.begin();
+	Serial.println("Keypad initialized!");
 
 /***************************   LEDS   ***************************/
 	omxDisp.drawLoading();
 	omxLeds.initSetup();
+	Serial.println("LEDs init complete!");
+
+/************************* Screensaver **************************/
+	// no need to drawLoading() here
+	omxScreensaver.resetCounter();
+	Serial.println("Screensaver timer reset!");
 
 	Serial.println("Setup Complete!");
 
