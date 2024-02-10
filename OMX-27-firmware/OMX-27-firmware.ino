@@ -266,6 +266,8 @@ void handleNoteOn(byte channel, byte note, byte velocity)
 		omxUtil.cvNoteOn(note);
 	}
 
+	omxScreensaver.resetCounter();
+
 	activeOmxMode->inMidiNoteOn(channel, note, velocity);
 }
 
@@ -452,7 +454,7 @@ void savePatterns(void)
 	Serial.println((String) "nLocalAddress: " + nLocalAddress);
 
 	// Grids patterns
-	patternSize = OmxModeGrids::serializedPatternSize(storage->isEeprom());
+	patternSize = OmxModeGrids::serializedPatternSize(isEeprom);
 	int numPatterns = OmxModeGrids::getNumPatterns();
 
 	// Serial.println((String)"OmxModeGrids patternSize: " + patternSize);
@@ -533,7 +535,7 @@ void loadPatterns(void)
 	// 332 * 8 = 2656
 
 	// Grids patterns
-	patternSize = OmxModeGrids::serializedPatternSize(storage->isEeprom());
+	patternSize = OmxModeGrids::serializedPatternSize(isEeprom);
 	int numPatterns = OmxModeGrids::getNumPatterns();
 
 	for (int i = 0; i < numPatterns; i++)
