@@ -13,8 +13,78 @@
 #include "../midimacro/midimacro_deluge.h"
 
 
-// Make sequencer keys light up as notes are triggered
 
+
+// AUX View - Rendered by form
+// Familiar shortcuts as MI Modes
+
+// AUX + Top 1 = Play/Stop
+// For Omni:
+// AUX + Top 2 = Reset
+// AUX + Top 3 = Flip play direction if forward or reverse
+// AUX + Top 4 = Increment rand/shuffle mode
+
+// Main view, F1, F2, 8 Sequencer machines - Top keys, rendered by Form
+// Lower portion rendered by the sequencer
+
+// Top 8 - Select a machine
+// Hold top 8, press bottom 16 to select a sequencer type
+// Changing sequencer type will get rid of current sequencer. 
+// Maybe keep this in ram and offer undo with F1?
+
+// Machines:
+// OMNI - Powerful step sequencer
+// Euclidean
+// Grids
+// Tambola - Bouncing balls in rotating polygon
+
+// OMNI
+// Pot 1 - Pickup off, Selects Page: 1 - 4
+// Pot 2 - Pickup on, Selects Zoom: 1 Bar, 2 Bar, 4 Bar, Steps faster than zoom are hidden. 
+// Pot 3 - Pickup on, Cross Page: Applies changes to step on all bars if zoom level 1 bar, 
+// Pot 4 - Pickup on, Sets track rate
+
+// Pot 5 - Pickup On, default is mix. Change behaviour of keys, also on UI page
+
+// Mix - Press keys to mute/unmute, hold to enter note editor
+//      Mix note editor here shows full note params
+//      Pots will set params of current page using pot pickup
+//      Sequencers can also be muted with a click, or soloed by holding down the sequencer key
+
+// Transpose - Changes keys to keyboard view, select a key to set transpose value
+
+// Step - Enters note editor, pressing keys sets notes for step, auto advances to next step when releasing notes
+
+// Note Edit - Enters note editor, pressing keys toggles notes on and off, advance to next step by turning encoder
+//      OMNI can be set to monophonic, in this case, Note Edit sets note to latest key, only one note
+
+// Params - Hold key to quickly set the parameters for step of current page using the pots or encoder. 
+//      If using pots, pot pickup is used
+//      4 Pot CC's can be set on last page
+//      If holding a step then pressing another step it will set that steps length
+
+// Track Length - Set the start and end steps for the track length, behaviour is changed by selecting highlighted start or end step than selecting non highlighted step or using the encoder
+
+// Function - Hold key then press top keys to set the step function
+
+// Transpose Pattern - Edit the transpose pattern using keys like in arp editor
+
+// Configure - Use this mode to change sequencers
+//      Hold sequencer and select type below
+//      Global config params also available in menu here
+//    
+
+// Macro modes - Available and accessible just like in MI mode by double pressing AUX. 
+
+// Menu Pages
+// Transpose Pattern - Editable in menu unless pot 5 mode is set to transpose pattern. 
+
+// F1 = Copy / Undo cut or undo changing a machine
+// F2 = Paste
+// F1 + F2 = Cut
+
+// Other features
+// - Make sequencer keys light up as notes are triggered by them
 
 // This mode is designed to be used with samplers or drum machines
 // Each key can be configured to whatever Note, Vel, Midi Chan you want. 

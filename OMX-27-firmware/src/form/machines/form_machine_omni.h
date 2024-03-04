@@ -11,11 +11,17 @@ private:
         TRANPOSEMODE_SEMITONE, // Transpose patterns and values are in semitones
         TRANPOSEMODE_COUNT
     };
-    
+
+    enum PlayDirection
+    {
+        TRACKDIRECTION_FORWARD,      // Steps move forward
+        TRACKDIRECTION_REVERSE,      // Steps move backward
+        TRACKDIRECTION_COUNT
+    };
+
     enum PlayMode
     {
-        TRACKMODE_FORWARD,      // Steps move forward
-        TRACKMODE_REVERSE,      // Steps move backward
+        TRACKMODE_NONE,
         TRACKMODE_PONG,         // Steps move forward and reverse on last step
         TRACKMODE_RAND,         // Each step is randomly selected
         TRACKMODE_RANDNODUPE,   // Steps are randomly selected but won't play the same step twice
@@ -112,9 +118,10 @@ private:
 
         uint8_t len : 6;            // Max 63, Length of track, 0 - 63, maps to 1 - 64
         // This is rot in current Seq, just going to make this a utility function that moves everything
-        // uint8_t startstep : 6;      // Max 63,  Step that track starts on
+        uint8_t startstep : 6;      // Max 63,  Step that track starts on, -1 for random? 
         uint8_t swing : 7;          // Amount of swing
-        uint8_t playMode : 3;       // Max 7
+        uint8_t playDirection : 1;  // Forward or back
+        uint8_t playMode : 3;       // Shuffles and randomizes
         uint8_t midiFx : 3;         // MidiFX index, 0 for off, 1-5 for MidiFX Groups 1-5
     };
 
@@ -124,12 +131,15 @@ private:
         Track tracks[1];            // Only one track per seq, possibly more in future if mem permits
 
         int8_t transpose : 8;       // +- 64, in intervals or semitones depending on transposeMode
+        uint8_t rate: 5;
         uint8_t transposeMode : 1;  // Max 1, Intervals or semitones
         uint8_t channel : 4;        // 0 - 15 , maps to channels 1 - 16
+        uint8_t monoPhonic : 1;     // bool
         uint8_t mute : 1;           // bool
         uint8_t solo : 1;           // bool
         uint8_t sendMidi : 1;       // bool
         uint8_t sendCV : 1;         // bool
+        uint8_t gate : 7;           // 0-100 mapping to 0-200% for quick legato
 
         int8_t transpPattern[16];   // second pattern for transposing notes
         uint8_t transpLen : 4;      // Length of transpose pattern

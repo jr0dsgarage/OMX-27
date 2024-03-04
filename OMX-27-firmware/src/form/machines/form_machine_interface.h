@@ -31,6 +31,12 @@ public:
 
 	virtual void onDisplayUpdate() {}
 
+    // AUX + Top 1 = Play Stop
+    // For Omni:
+    // AUX + Top 2 = Reset
+    // AUX + Top 3 = Flip play direction if forward or reverse
+    // AUX + Top 4 = Increment play direction mode
+	virtual void onAUXFunc(uint8_t funcKey) {}
 
 protected:
 	bool enabled_;
