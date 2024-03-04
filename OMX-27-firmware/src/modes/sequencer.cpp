@@ -72,6 +72,7 @@ int loopCount[NUM_SEQ_PATTERNS][NUM_STEPS] = {
 	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}};
 
+// 1 out of 1 bars, 1 out of 2 bars, 2 out of 2 bars
 const char *trigConditions[36] = {
 	"1:1",
 	"1:2", "2:2",
@@ -385,6 +386,7 @@ void changeStepType(int amount)
 	auto tempType = getSelectedStep()->stepType + amount;
 
 	// this is fucking hacky to increment the enum for stepType
+	// yes, yes it is, why? Some modulo is in order here
 	switch (tempType)
 	{
 	case 0:
