@@ -38,6 +38,8 @@ public:
 	uint8_t getNumPages();
 	uint8_t getNumOfParamsForPage(uint8_t pageIndex);
 
+	bool isPageAndParam(int8_t pageIndex, int8_t paramIndex);
+
 private:
 	struct PageConfig
 	{

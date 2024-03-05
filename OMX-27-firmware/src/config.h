@@ -61,6 +61,9 @@ enum MIDIFXTYPE
 
 extern const OMXMode DEFAULT_MODE;
 
+#define NUM_MIDIFX_GROUPS 5
+#define NUM_MIDIFX_SLOTS 8
+
 enum FUNCKEYMODE
 {
 	FUNCKEYMODE_NONE, // No function keys

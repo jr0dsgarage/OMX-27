@@ -1,19 +1,13 @@
 #pragma once
 
 #include "../modes/omx_mode_interface.h"
+#include "../utils/aux_macro_manager.h"
 #include "../utils/music_scales.h"
 #include "../utils/param_manager.h"
 #include "../modes/submodes/submode_midifxgroup.h"
 #include "../modes/submodes/submode_potconfig.h"
 #include "../modes/submodes/submode_preset.h"
 #include "../midifx/midifx_interface.h"
-#include "../midifx/midifx_interface.h"
-#include "../midimacro/midimacro_m8.h"
-#include "../midimacro/midimacro_norns.h"
-#include "../midimacro/midimacro_deluge.h"
-
-
-
 
 // AUX View - Rendered by form
 // Familiar shortcuts as MI Modes
@@ -136,19 +130,23 @@ private:
 	// void onEncoderChangedSelectParam(Encoder::Update enc);
 	ParamManager params;
 
-	bool macroActive_ = false;
-	bool mfxQuickEdit_ = false;
-	uint8_t quickEditMfxIndex_ = 0;
+    AuxMacroManager auxMacroManager_;
+
+    // char foo[sizeof(auxMacroManager_)]
+
+	// bool macroActive_ = false;
+	// bool mfxQuickEdit_ = false;
+	// uint8_t quickEditMfxIndex_ = 0;
 
 	bool getEncoderSelect();
 
 	// SubModes
-	SubmodeInterface *activeSubmode = nullptr;
-	SubModePotConfig subModePotConfig_;
+	// SubmodeInterface *activeSubmode = nullptr;
+	// SubModePotConfig subModePotConfig_;
 
-	void enableSubmode(SubmodeInterface *subMode);
-	void disableSubmode();
-	bool isSubmodeEnabled();
+	// void enableSubmode(SubmodeInterface *subMode);
+	// void disableSubmode();
+	// bool isSubmodeEnabled();
 
     bool onKeyUpdateSelMidiFX(OMXKeypadEvent e);
 	bool onKeyHeldSelMidiFX(OMXKeypadEvent e);
@@ -178,14 +176,6 @@ private:
 
 	// uint8_t mfxIndex_ = 0;
 
-	midimacro::MidiMacroNorns nornsMarco_;
-	midimacro::MidiMacroM8 m8Macro_;
-	midimacro::MidiMacroDeluge delugeMacro_;
-
-	midimacro::MidiMacroInterface *activeMacro_;
-
-	midimacro::MidiMacroInterface *getActiveMacro();
-
 	void saveKit(uint8_t saveIndex);
 	void loadKit(uint8_t loadIndex);
 
@@ -209,5 +199,10 @@ private:
 	static void doNoteOffForwarder(void *context, uint8_t keyIndex)
 	{
 		static_cast<OmxModeForm *>(context)->doNoteOff(keyIndex);
+	}
+
+    static void selectMidiFXForwarder(void *context, uint8_t keyIndex, bool dispMsg)
+	{
+		static_cast<OmxModeForm *>(context)->selectMidiFx(keyIndex, dispMsg);
 	}
 };
