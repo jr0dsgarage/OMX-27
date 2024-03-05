@@ -25,7 +25,7 @@ OmxModeForm::OmxModeForm()
 
     auxMacroManager_.setContext(this);
     auxMacroManager_.setMacroNoteOn(&OmxModeForm::doNoteOnForwarder);
-    auxMacroManager_.setMacroNoteOn(&OmxModeForm::doNoteOffForwarder);
+    auxMacroManager_.setMacroNoteOff(&OmxModeForm::doNoteOffForwarder);
     auxMacroManager_.setSelectMidiFXFPTR(&OmxModeForm::selectMidiFXForwarder);
 
     presetManager.setContextPtr(this);
@@ -66,6 +66,8 @@ void OmxModeForm::onModeActivated()
 	params.setSelPageAndParam(0, 0);
 	encoderSelect = true;
 
+    auxMacroManager_.onModeActivated();
+
     // activeDrumKit.CopyFrom(drumKits[selDrumKit]);
 
 	// selectMidiFx(mfxIndex_, false);
@@ -80,6 +82,8 @@ void OmxModeForm::onModeDeactivated()
 		subModeMidiFx[i].setEnabled(false);
 		subModeMidiFx[i].onModeChanged();
 	}
+
+    auxMacroManager_.onModeDectivated();
 }
 
 void OmxModeForm::stopSequencers()
@@ -261,7 +265,7 @@ void OmxModeForm::onEncoderButtonDown()
 
 	if (params.isPageAndParam(FORMPAGE_CFG, 0))
 	{
-		auxMacroManager_.enableSubmode(&auxMacroManager_.subModePotConfig);
+		auxMacroManager_.enableSubmode(&omxUtil.subModePotConfig);
 		omxDisp.isDirty();
 		return;
 	}
@@ -413,7 +417,6 @@ void OmxModeForm::onKeyHeldUpdate(OMXKeypadEvent e)
 void OmxModeForm::updateLEDs()
 {
     omxLeds.setAllLEDS(0, 0, 0);
-
 
     // bool blinkState = omxLeds.getBlinkState();
     // bool slowBlink = omxLeds.getSlowBlinkState();

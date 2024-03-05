@@ -2,6 +2,14 @@
 #include "../utils/omx_util.h"
 #include "../hardware/omx_disp.h"
 #include "../hardware/omx_leds.h"
+#include "../midimacro/midimacro_m8.h"
+#include "../midimacro/midimacro_norns.h"
+#include "../midimacro/midimacro_deluge.h"
+
+// These are static and shared between different modes
+midimacro::MidiMacroNorns nornsMarco_;
+midimacro::MidiMacroM8 m8Macro_;
+midimacro::MidiMacroDeluge delugeMacro_;
 
 AuxMacroManager::AuxMacroManager()
 {
@@ -116,6 +124,22 @@ void AuxMacroManager::setSelectMidiFXFPTR(void (*fptr)(void *, uint8_t, bool))
 
 void AuxMacroManager::selectMidiFx(uint8_t mfxIndex, bool dispMsg)
 {
+    if(isMFXQuickEditEnabled())
+	{
+		// Change the MidiFX Group being edited
+		if(isMidiFXGroupIndexValid(mfxIndex) && mfxIndex != quickEditMfxIndex_)
+		{
+			enableSubmode(&subModeMidiFx[mfxIndex]);
+			subModeMidiFx[mfxIndex].enablePassthrough();
+			quickEditMfxIndex_ = mfxIndex;
+			dispMsg = false;
+		}
+		else if(mfxIndex >= NUM_MIDIFX_GROUPS)
+		{
+			disableSubmode();
+		}
+	}
+
     if (context_ != nullptr)
     {
         selectMidiFxFptr_(context_, mfxIndex, dispMsg);
@@ -242,6 +266,8 @@ bool AuxMacroManager::onKeyUpdate(OMXKeypadEvent e)
     {
         if (activeSubmode->onKeyUpdate(e))
             return true; // Key consumed by submode
+
+        return false;
     }
 
     if (midiMacroConfig.midiMacro == 0)
@@ -283,6 +309,7 @@ bool AuxMacroManager::onKeyUpdate(OMXKeypadEvent e)
 
             midiSettings.midiAUX = false;
             macroActive_ = false;
+            omxLeds.setAllLEDS(0,0,0);
             omxLeds.setDirty();
             omxDisp.setDirty();
         }
@@ -481,6 +508,11 @@ bool AuxMacroManager::updateLEDs()
 {
     if (isSubmodeEnabled())
 	{
+        bool blinkStateSlow = omxLeds.getSlowBlinkState();
+
+		auto auxColor = (blinkStateSlow ? RED : LEDOFF);
+		strip.setPixelColor(0, auxColor);
+        
 		if (activeSubmode->updateLEDs())
 			return true;
 	}

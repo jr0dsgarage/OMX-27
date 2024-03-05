@@ -3,11 +3,8 @@
 #include "../hardware/omx_keypad.h"
 #include "../config.h"
 #include "../modes/submodes/submode_midifxgroup.h"
-#include "../modes/submodes/submode_potconfig.h"
-#include "../midimacro/midimacro_m8.h"
-#include "../midimacro/midimacro_norns.h"
-#include "../midimacro/midimacro_deluge.h"
 #include "../utils/music_scales.h"
+#include "../midimacro/midimacro_interface.h"
 
 
 /// This class manages enabling/disabling macros, submodes, and aux shortcuts
@@ -20,6 +17,11 @@
 /// Before integration:
 /// RAM:   [======    ]  58.0% (used 37988 bytes from 65536 bytes)
 /// Flash: [=======   ]  72.0% (used 188792 bytes from 262144 bytes)
+///
+/// After Midi Keyboard integration
+/// Ram reduced
+/// RAM:   [=====     ]  54.5% (used 35704 bytes from 65536 bytes)
+/// Flash: [=======   ]  72.0% (used 188752 bytes from 262144 bytes)
 class AuxMacroManager
 {
 public:
@@ -70,14 +72,11 @@ public:
     void UpdateAUXLEDS(uint8_t selectedMidiFX);
 
     // SubModes
-	static SubModePotConfig subModePotConfig;
-
 	void enableSubmode(SubmodeInterface *subMode);
     void disableSubmode();
 	bool isSubmodeEnabled();
 
     midimacro::MidiMacroInterface *getActiveMacro();
-
 
 private:
     bool macroActive_;
@@ -90,11 +89,7 @@ private:
     void (*doNoteOnFptr_)(void *, uint8_t);
     void (*doNoteOffFptr_)(void *, uint8_t);
 
-    // These are static and shared between different modes
-    static midimacro::MidiMacroNorns nornsMarco_;
-    static midimacro::MidiMacroM8 m8Macro_;
-    static midimacro::MidiMacroDeluge delugeMacro_;
-
+    
     midimacro::MidiMacroInterface *activeMacro_;
 
     // Static glue to link a pointer to a member function
