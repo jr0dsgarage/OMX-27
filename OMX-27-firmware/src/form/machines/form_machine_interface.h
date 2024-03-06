@@ -3,6 +3,12 @@
 #include "../../hardware/omx_keypad.h"
 #include "../../utils/param_manager.h"
 
+enum FormMachineType
+{
+	FORMMACH_NULL,
+	FORMMACH_OMNI
+};
+
 // defines interface for a submode, a mode within a mode
 class FormMachineInterface
 {
@@ -10,6 +16,9 @@ public:
 	FormMachineInterface() {}
 	virtual ~FormMachineInterface() {}
 
+	virtual FormMachineType getType() = 0;
+	virtual FormMachineInterface *getClone() { return nullptr; }
+	
     // Getters
 	virtual bool isEnabled();
 	virtual bool usesPots() { return false; } // return true if submode uses pots

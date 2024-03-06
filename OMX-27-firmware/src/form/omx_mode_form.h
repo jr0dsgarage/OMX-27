@@ -8,6 +8,7 @@
 #include "../modes/submodes/submode_potconfig.h"
 #include "../modes/submodes/submode_preset.h"
 #include "../midifx/midifx_interface.h"
+#include "machines/form_machine_interface.h"
 
 // AUX View - Rendered by form
 // Familiar shortcuts as MI Modes
@@ -23,7 +24,7 @@
 
 // Top 8 - Select a machine
 // Hold top 8, press bottom 16 to select a sequencer type
-// Changing sequencer type will get rid of current sequencer. 
+// Changing sequencer type will get rid of current sequencer.
 // Maybe keep this in ram and offer undo with F1?
 
 // Machines:
@@ -34,8 +35,8 @@
 
 // OMNI
 // Pot 1 - Pickup off, Selects Page: 1 - 4
-// Pot 2 - Pickup on, Selects Zoom: 1 Bar, 2 Bar, 4 Bar, Steps faster than zoom are hidden. 
-// Pot 3 - Pickup on, Cross Page: Applies changes to step on all bars if zoom level 1 bar, 
+// Pot 2 - Pickup on, Selects Zoom: 1 Bar, 2 Bar, 4 Bar, Steps faster than zoom are hidden.
+// Pot 3 - Pickup on, Cross Page: Applies changes to step on all bars if zoom level 1 bar,
 // Pot 4 - Pickup on, Sets track rate
 
 // Pot 5 - Pickup On, default is mix. Change behaviour of keys, also on UI page
@@ -52,7 +53,7 @@
 // Note Edit - Enters note editor, pressing keys toggles notes on and off, advance to next step by turning encoder
 //      OMNI can be set to monophonic, in this case, Note Edit sets note to latest key, only one note
 
-// Params - Hold key to quickly set the parameters for step of current page using the pots or encoder. 
+// Params - Hold key to quickly set the parameters for step of current page using the pots or encoder.
 //      If using pots, pot pickup is used
 //      4 Pot CC's can be set on last page
 //      If holding a step then pressing another step it will set that steps length
@@ -66,12 +67,12 @@
 // Configure - Use this mode to change sequencers
 //      Hold sequencer and select type below
 //      Global config params also available in menu here
-//    
+//
 
-// Macro modes - Available and accessible just like in MI mode by double pressing AUX. 
+// Macro modes - Available and accessible just like in MI mode by double pressing AUX.
 
 // Menu Pages
-// Transpose Pattern - Editable in menu unless pot 5 mode is set to transpose pattern. 
+// Transpose Pattern - Editable in menu unless pot 5 mode is set to transpose pattern.
 
 // F1 = Copy / Undo cut or undo changing a machine
 // F2 = Paste
@@ -81,13 +82,13 @@
 // - Make sequencer keys light up as notes are triggered by them
 
 // This mode is designed to be used with samplers or drum machines
-// Each key can be configured to whatever Note, Vel, Midi Chan you want. 
-// This class is very similar to the midi keyboard, maybe we merge or inherit. 
+// Each key can be configured to whatever Note, Vel, Midi Chan you want.
+// This class is very similar to the midi keyboard, maybe we merge or inherit.
 class OmxModeForm : public OmxModeInterface
 {
 public:
 	OmxModeForm();
-	~OmxModeForm() {}
+	~OmxModeForm();
 
 	void InitSetup() override;
 	void onModeActivated() override;
@@ -119,7 +120,10 @@ public:
 
 	int saveToDisk(int startingAddress, Storage *storage);
 	int loadFromDisk(int startingAddress, Storage *storage);
+
 private:
+	static const uint8_t kNumMachines = 8;
+
 	SubModePreset presetManager;
 	MusicScales *musicScale;
 
@@ -130,13 +134,42 @@ private:
 	// void onEncoderChangedSelectParam(Encoder::Update enc);
 	ParamManager params;
 
-    AuxMacroManager auxMacroManager_;
+	AuxMacroManager auxMacroManager_;
 
-    // char foo[sizeof(auxMacroManager_)]
+	uint8_t selectedMachine_;
+
+	// uint8_t copiedMachineIndex_;
+
+	FormMachineInterface *machines_[kNumMachines];
+
+	FormMachineInterface *copyBuffer_; // Machine for cut/copy/paste and undo
+	FormMachineInterface *undoBuffer_; // Machine for cut/copy/paste and undo
+
+	bool isMachineValid(uint8_t machineIndex);
+
+	const char *getMachineName(uint8_t machineIndex);
+	int getMachineColor(uint8_t machineIndex);
+
+
+
+	void selectMachine(uint8_t machineIndex);
+
+	void changeMachineAtIndex(uint8_t machineIndex, FormMachineType machineType);
+
+	void cutMachineAt(uint8_t machineIndex);
+	void copyMachineAt(uint8_t machineIndex);
+	void pasteMachineTo(uint8_t machineIndex);
+	void setMachineTo(uint8_t machineIndex, FormMachineInterface *ptr);
+
+	// char foo[sizeof(auxMacroManager_)]
 
 	// bool macroActive_ = false;
 	// bool mfxQuickEdit_ = false;
 	// uint8_t quickEditMfxIndex_ = 0;
+
+	void cleanup();
+
+	uint8_t getShortcutMode();
 
 	bool getEncoderSelect();
 
@@ -148,7 +181,7 @@ private:
 	// void disableSubmode();
 	// bool isSubmodeEnabled();
 
-    bool onKeyUpdateSelMidiFX(OMXKeypadEvent e);
+	bool onKeyUpdateSelMidiFX(OMXKeypadEvent e);
 	bool onKeyHeldSelMidiFX(OMXKeypadEvent e);
 
 	void doNoteOn(uint8_t keyIndex);
@@ -201,7 +234,7 @@ private:
 		static_cast<OmxModeForm *>(context)->doNoteOff(keyIndex);
 	}
 
-    static void selectMidiFXForwarder(void *context, uint8_t keyIndex, bool dispMsg)
+	static void selectMidiFXForwarder(void *context, uint8_t keyIndex, bool dispMsg)
 	{
 		static_cast<OmxModeForm *>(context)->selectMidiFx(keyIndex, dispMsg);
 	}

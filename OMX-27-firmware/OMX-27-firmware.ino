@@ -36,6 +36,7 @@
 #include "src/modes/omx_mode_grids.h"
 #include "src/modes/omx_mode_euclidean.h"
 #include "src/modes/omx_mode_chords.h"
+#include "src/form/omx_mode_form.h"
 #include "src/modes/omx_screensaver.h"
 #include "src/hardware/omx_leds.h"
 #include "src/utils/music_scales.h"
@@ -60,6 +61,7 @@ OmxModeGrids omxModeGrids;
 #endif
 OmxModeEuclidean omxModeEuclid;
 OmxModeChords omxModeChords;
+OmxModeForm omxModeForm;
 
 OmxModeInterface *activeOmxMode;
 
@@ -173,6 +175,9 @@ void changeOmxMode(OMXMode newOmxmode)
 		break;
 	case MODE_CHORDS:
 		activeOmxMode = &omxModeChords;
+		break;
+	case MODE_FORM:
+		activeOmxMode = &omxModeForm;
 		break;
 	case MODE_S1:
 		omxModeSeq.setSeq1Mode();
@@ -1029,6 +1034,7 @@ void setup()
 #endif
 	omxModeEuclid.SetScale(&globalScale);
 	omxModeChords.SetScale(&globalScale);
+	omxModeForm.SetScale(&globalScale);
 
 	// Load from EEPROM
 	bool bLoaded = loadFromStorage();
