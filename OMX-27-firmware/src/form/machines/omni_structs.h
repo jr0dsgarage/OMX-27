@@ -113,7 +113,7 @@ namespace FormOmni
 
     struct Track
     {
-        Step steps[16];
+        Step steps[64];
 
         uint8_t len : 6; // Max 63, Length of track, 0 - 63, maps to 1 - 64
         // This is rot in current Seq, just going to make this a utility function that moves everything
