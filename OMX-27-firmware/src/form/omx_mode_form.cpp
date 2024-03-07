@@ -204,9 +204,11 @@ void OmxModeForm::setMachineTo(uint8_t machineIndex, FormMachineInterface *ptr)
 
 void OmxModeForm::updateShortcutMode()
 {
+	uint8_t prevMode = omxFormGlobal.shortcutMode;
+
 	if (midiSettings.keyState[0])
 	{
-		omxFormGlobal.shortcutMode = FORMSHORTCUT_NONE;
+		omxFormGlobal.shortcutMode = FORMSHORTCUT_AUX;
 	}
 	else if (midiSettings.keyState[1] && midiSettings.keyState[2])
 	{
@@ -223,6 +225,12 @@ void OmxModeForm::updateShortcutMode()
 	else
 	{
 		omxFormGlobal.shortcutMode =  FORMSHORTCUT_NONE;
+	}
+
+	if(prevMode != omxFormGlobal.shortcutMode)
+	{
+		omxDisp.setDirty();
+		omxLeds.setDirty();
 	}
 }
 
@@ -520,13 +528,16 @@ void OmxModeForm::loadKit(uint8_t loadIndex)
 
 void OmxModeForm::onKeyUpdate(OMXKeypadEvent e)
 {
+	omxDisp.setDirty();
+	omxLeds.setDirty();
+
+	updateShortcutMode();
+
 	if (auxMacroManager_.onKeyUpdate(e))
 		return; // Key consumed by macro
 
 	if (onKeyUpdateSelMidiFX(e))
 		return;
-
-	updateShortcutMode();
 
 	int thisKey = e.key();
 
@@ -781,6 +792,8 @@ void OmxModeForm::updateLEDs()
 
 void OmxModeForm::onDisplayUpdate()
 {
+	updateShortcutMode();
+
 	if (auxMacroManager_.updateLEDs() == false && omxLeds.isDirty())
 	{
 		// Macro or submode is off, update our LEDs
@@ -811,9 +824,9 @@ void OmxModeForm::onDisplayUpdate()
 
 	switch (omxFormGlobal.shortcutMode)
 	{
-	case FORMSHORTCUT_AUX:
-		// tempString = "Aux";
-		break;
+	// case FORMSHORTCUT_AUX:
+	// 	// tempString = "Aux";
+	// 	break;
 	case FORMSHORTCUT_F1:
 		tempString = "Copy";
 		dispLabel = true;
@@ -849,25 +862,25 @@ void OmxModeForm::onDisplayUpdate()
 	}
 	else if(dispParams)
 	{
-		omxDisp.clearLegends();
+		// omxDisp.clearLegends();
 
-		switch (params.getSelPage())
-		{
-		case FORMPAGE_INSPECT:
-		{
-			omxDisp.setLegend(0, "P CC", potSettings.potCC);
-			omxDisp.setLegend(1, "P VAL", potSettings.potCC);
-			omxDisp.setLegend(2, "NOTE", potSettings.potCC);
-			omxDisp.setLegend(3, "VEL", potSettings.potCC);
-		}
-		break;
+		// switch (params.getSelPage())
+		// {
+		// case FORMPAGE_INSPECT:
+		// {
+		// 	omxDisp.setLegend(0, "P CC", potSettings.potCC);
+		// 	omxDisp.setLegend(1, "P VAL", potSettings.potCC);
+		// 	omxDisp.setLegend(2, "NOTE", potSettings.potCC);
+		// 	omxDisp.setLegend(3, "VEL", potSettings.potCC);
+		// }
+		// break;
 
-		default:
-			break;
-		}
+		// default:
+		// 	break;
+		// }
 
-		omxDisp.dispGenericMode2(params.getNumPages(), params.getSelPage(), params.getSelParam(), getEncoderSelect());
-		// omxDisp.dispGenericModeLabelDoubleLine
+		// omxDisp.dispGenericMode2(params.getNumPages(), params.getSelPage(), params.getSelParam(), getEncoderSelect());
+		// // omxDisp.dispGenericModeLabelDoubleLine
 
 	}
 	// if (params.getSelPage() == FORMPAGE_INSPECT)
