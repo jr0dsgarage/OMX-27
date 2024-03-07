@@ -10,30 +10,22 @@
 #include "../midi/noteoffs.h"
 #include "machines/form_machine_null.h"
 #include "machines/form_machine_omni.h"
+#include "omx_form_global.h"
 
 enum FormModePage
 {
+	FORMPAGE_INSPECT,		// Sent Pot CC, Last Note, Last Vel, Last Chan, Not editable, just FYI
 	FORMPAGE_DRUMKEY,		// Note, Chan, Vel, MidiFX
 	FORMPAGE_DRUMKEY2,		// Hue, RND Hue, Copy, Paste
 	FORMPAGE_SCALES,		// Hue,
-	FORMPAGE_INSPECT,		// Sent Pot CC, Last Note, Last Vel, Last Chan, Not editable, just FYI
 	FORMPAGE_POTSANDMACROS, // PotBank, Thru, Macro, Macro Channel
 	FORMPAGE_CFG,
 	FORMPAGE_NUMPAGES
 };
 
-enum ShortCutMode
-{
-	FORMSHORTCUT_NONE, // No shortcut keys
-	FORMSHORTCUT_AUX,  // Aux shortcut held
-	FORMSHORTCUT_F1,   // Top key 1 held
-	FORMSHORTCUT_F2,   // Top key 2 held
-	FORMSHORTCUT_F3	   // Top key 1 & 2 held
-};
+const char *kMachineNames[FORMMACH_COUNT] = {"NONE", "OMNI"};
 
-const char *kMachineNames[] = {"NONE", "OMNI"};
-
-const int kMachineColors[] = {LEDOFF, ORANGE};
+const int kMachineColors[FORMMACH_COUNT] = {LEDOFF, ORANGE};
 
 OmxModeForm::OmxModeForm()
 {
@@ -51,7 +43,7 @@ OmxModeForm::OmxModeForm()
 	// Setup default machines
 	for (uint8_t i = 0; i < kNumMachines; i++)
 	{
-		machines_[i] = new FormMachineOmni();
+		machines_[i] = new FormOmni::FormMachineOmni();
 	}
 
 	// char foo[sizeof(OmxModeForm)]
@@ -83,6 +75,14 @@ void OmxModeForm::cleanup()
 	{
 		delete undoBuffer_;
 		undoBuffer_ = nullptr;
+	}
+}
+
+void OmxModeForm::changeFormMode(uint8_t newFormMode)
+{
+	if (newFormMode < FORMMODE_COUNT)
+	{
+		omxFormGlobal.formMode = newFormMode;
 	}
 }
 
@@ -119,6 +119,19 @@ void OmxModeForm::selectMachine(uint8_t machineIndex)
 	selectedMachine_ = machineIndex;
 }
 
+FormMachineInterface *OmxModeForm::getSelectedMachine()
+{
+	return machines_[selectedMachine_];
+}
+
+void OmxModeForm::changeMachineAtIndex(uint8_t machineIndex, uint8_t machineType)
+{
+	if (machineType < FORMMACH_COUNT)
+	{
+		changeMachineAtIndex(selectedMachine_, (FormMachineType)machineType);
+	}
+}
+
 void OmxModeForm::changeMachineAtIndex(uint8_t machineIndex, FormMachineType machineType)
 {
 	if (isMachineValid(machineIndex) == false)
@@ -126,6 +139,7 @@ void OmxModeForm::changeMachineAtIndex(uint8_t machineIndex, FormMachineType mac
 
 	switch (machineType)
 	{
+	case FORMMACH_COUNT:
 	case FORMMACH_NULL:
 	{
 		setMachineTo(machineIndex, new FormMachineNull());
@@ -133,7 +147,7 @@ void OmxModeForm::changeMachineAtIndex(uint8_t machineIndex, FormMachineType mac
 	break;
 	case FORMMACH_OMNI:
 	{
-		setMachineTo(machineIndex, new FormMachineOmni());
+		setMachineTo(machineIndex, new FormOmni::FormMachineOmni());
 	}
 	break;
 	}
@@ -188,26 +202,28 @@ void OmxModeForm::setMachineTo(uint8_t machineIndex, FormMachineInterface *ptr)
 	machines_[machineIndex] = ptr;
 }
 
-uint8_t OmxModeForm::getShortcutMode()
+void OmxModeForm::updateShortcutMode()
 {
 	if (midiSettings.keyState[0])
 	{
-		return FORMSHORTCUT_AUX;
+		omxFormGlobal.shortcutMode = FORMSHORTCUT_NONE;
 	}
 	else if (midiSettings.keyState[1] && midiSettings.keyState[2])
 	{
-		return FORMSHORTCUT_F3;
+		omxFormGlobal.shortcutMode = FORMSHORTCUT_F3;
 	}
 	else if (midiSettings.keyState[1])
 	{
-		return FORMSHORTCUT_F1;
+		omxFormGlobal.shortcutMode = FORMSHORTCUT_F1;
 	}
 	else if (midiSettings.keyState[2])
 	{
-		return FORMSHORTCUT_F2;
+		omxFormGlobal.shortcutMode = FORMSHORTCUT_F2;
 	}
-
-	return FORMSHORTCUT_NONE;
+	else
+	{
+		omxFormGlobal.shortcutMode =  FORMSHORTCUT_NONE;
+	}
 }
 
 void OmxModeForm::InitSetup()
@@ -239,7 +255,7 @@ void OmxModeForm::onModeActivated()
 	pendingNoteOffs.setNoteOffFunction(&OmxModeForm::onPendingNoteOffForwarder, this);
 
 	params.setSelPageAndParam(0, 0);
-	encoderSelect = true;
+	omxFormGlobal.encoderSelect = true;
 
 	Serial.println("AuxMacroActivated");
 	auxMacroManager_.onModeActivated();
@@ -272,6 +288,7 @@ void OmxModeForm::stopSequencers()
 
 void OmxModeForm::selectMidiFx(uint8_t mfxIndex, bool dispMsg)
 {
+	getSelectedMachine()->selectMidiFx(mfxIndex, dispMsg);
 	// uint8_t prevMidiFX = activeDrumKit.drumKeys[selDrumKey].midifx;
 
 	// if(mfxIndex != prevMidiFX && prevMidiFX < NUM_MIDIFX_GROUPS)
@@ -320,6 +337,14 @@ void OmxModeForm::onPotChanged(int potIndex, int prevValue, int newValue, int an
 	if (auxMacroManager_.onPotChanged(potIndex, prevValue, newValue, analogDelta))
 		return;
 
+	auto selMachine = getSelectedMachine();
+
+	if(selMachine->doesConsumePots())
+	{
+		selMachine->onPotChanged(potIndex, prevValue, newValue, analogDelta);
+		return;
+	}
+
 	omxUtil.sendPots(potIndex, sysSettings.midiChannel);
 	omxDisp.setDirty();
 }
@@ -330,6 +355,11 @@ void OmxModeForm::onClockTick()
 	{
 		// Lets them do things in background
 		subModeMidiFx[i].onClockTick();
+	}
+
+	for(auto machine : machines_)
+	{
+		machine->onClockTick();
 	}
 }
 
@@ -344,7 +374,7 @@ void OmxModeForm::loopUpdate(Micros elapsedTime)
 	}
 
 	// Can be modified by scale MidiFX
-	musicScale->calculateScaleIfModified(scaleConfig.scaleRoot, scaleConfig.scalePattern);
+	omxFormGlobal.musicScale->calculateScaleIfModified(scaleConfig.scaleRoot, scaleConfig.scalePattern);
 
 	// Serial.println("LoopUpdate complete");
 }
@@ -353,7 +383,7 @@ bool OmxModeForm::getEncoderSelect()
 {
 	// return encoderSelect && !midiSettings.midiAUX && !isDrumKeyHeld();
 
-	return encoderSelect && !midiSettings.midiAUX;
+	return omxFormGlobal.encoderSelect && !midiSettings.midiAUX;
 }
 
 void OmxModeForm::onEncoderChanged(Encoder::Update enc)
@@ -361,81 +391,84 @@ void OmxModeForm::onEncoderChanged(Encoder::Update enc)
 	if (auxMacroManager_.onEncoderChanged(enc))
 		return;
 
-	if (getEncoderSelect())
-	{
-		// onEncoderChangedSelectParam(enc);
-		params.changeParam(enc.dir());
-		omxDisp.setDirty();
-		return;
-	}
+	auto selMachine = getSelectedMachine();
+	selMachine->onEncoderChanged(enc);
 
-	auto amt = enc.accel(5); // where 5 is the acceleration factor if you want it, 0 if you don't)
+	// if (getEncoderSelect())
+	// {
+	// 	// onEncoderChangedSelectParam(enc);
+	// 	params.changeParam(enc.dir());
+	// 	omxDisp.setDirty();
+	// 	return;
+	// }
 
-	int8_t selPage = params.getSelPage();
-	int8_t selParam = params.getSelParam() + 1; // Add one for readability
+	// auto amt = enc.accel(5); // where 5 is the acceleration factor if you want it, 0 if you don't)
 
-	if (selPage == FORMPAGE_POTSANDMACROS)
-	{
-		if (selParam == 1)
-		{
-			potSettings.potbank = constrain(potSettings.potbank + amt, 0, NUM_CC_BANKS - 1);
-		}
-		if (selParam == 2)
-		{
-			midiSettings.midiSoftThru = constrain(midiSettings.midiSoftThru + amt, 0, 1);
-		}
-		if (selParam == 3)
-		{
-			midiMacroConfig.midiMacro = constrain(midiMacroConfig.midiMacro + amt, 0, nummacromodes);
-		}
-		if (selParam == 4)
-		{
-			midiMacroConfig.midiMacroChan = constrain(midiMacroConfig.midiMacroChan + amt, 1, 16);
-		}
-	}
-	else if (selPage == FORMPAGE_SCALES)
-	{
-		if (selParam == 1)
-		{
-			int prevRoot = scaleConfig.scaleRoot;
-			scaleConfig.scaleRoot = constrain(scaleConfig.scaleRoot + amt, 0, 12 - 1);
-			if (prevRoot != scaleConfig.scaleRoot)
-			{
-				musicScale->calculateScale(scaleConfig.scaleRoot, scaleConfig.scalePattern);
-			}
-		}
-		if (selParam == 2)
-		{
-			int prevPat = scaleConfig.scalePattern;
-			scaleConfig.scalePattern = constrain(scaleConfig.scalePattern + amt, -1, musicScale->getNumScales() - 1);
-			if (prevPat != scaleConfig.scalePattern)
-			{
-				omxDisp.displayMessage(musicScale->getScaleName(scaleConfig.scalePattern));
-				musicScale->calculateScale(scaleConfig.scaleRoot, scaleConfig.scalePattern);
-			}
-		}
-		if (selParam == 3)
-		{
-			scaleConfig.lockScale = constrain(scaleConfig.lockScale + amt, 0, 1);
-		}
-		if (selParam == 4)
-		{
-			scaleConfig.group16 = constrain(scaleConfig.group16 + amt, 0, 1);
-		}
-	}
-	else if (selPage == FORMPAGE_CFG)
-	{
-		if (selParam == 3)
-		{
-			clockConfig.globalQuantizeStepIndex = constrain(clockConfig.globalQuantizeStepIndex + amt, 0, kNumArpRates - 1);
-		}
-		else if (selParam == 4)
-		{
-			cvNoteUtil.triggerMode = constrain(cvNoteUtil.triggerMode + amt, 0, 1);
-		}
-	}
+	// int8_t selPage = params.getSelPage();
+	// int8_t selParam = params.getSelParam() + 1; // Add one for readability
 
-	omxDisp.setDirty();
+	// if (selPage == FORMPAGE_POTSANDMACROS)
+	// {
+	// 	if (selParam == 1)
+	// 	{
+	// 		potSettings.potbank = constrain(potSettings.potbank + amt, 0, NUM_CC_BANKS - 1);
+	// 	}
+	// 	if (selParam == 2)
+	// 	{
+	// 		midiSettings.midiSoftThru = constrain(midiSettings.midiSoftThru + amt, 0, 1);
+	// 	}
+	// 	if (selParam == 3)
+	// 	{
+	// 		midiMacroConfig.midiMacro = constrain(midiMacroConfig.midiMacro + amt, 0, nummacromodes);
+	// 	}
+	// 	if (selParam == 4)
+	// 	{
+	// 		midiMacroConfig.midiMacroChan = constrain(midiMacroConfig.midiMacroChan + amt, 1, 16);
+	// 	}
+	// }
+	// else if (selPage == FORMPAGE_SCALES)
+	// {
+	// 	if (selParam == 1)
+	// 	{
+	// 		int prevRoot = scaleConfig.scaleRoot;
+	// 		scaleConfig.scaleRoot = constrain(scaleConfig.scaleRoot + amt, 0, 12 - 1);
+	// 		if (prevRoot != scaleConfig.scaleRoot)
+	// 		{
+	// 			omxFormGlobal.musicScale->calculateScale(scaleConfig.scaleRoot, scaleConfig.scalePattern);
+	// 		}
+	// 	}
+	// 	if (selParam == 2)
+	// 	{
+	// 		int prevPat = scaleConfig.scalePattern;
+	// 		scaleConfig.scalePattern = constrain(scaleConfig.scalePattern + amt, -1, omxFormGlobal.musicScale->getNumScales() - 1);
+	// 		if (prevPat != scaleConfig.scalePattern)
+	// 		{
+	// 			omxDisp.displayMessage(omxFormGlobal.musicScale->getScaleName(scaleConfig.scalePattern));
+	// 			omxFormGlobal.musicScale->calculateScale(scaleConfig.scaleRoot, scaleConfig.scalePattern);
+	// 		}
+	// 	}
+	// 	if (selParam == 3)
+	// 	{
+	// 		scaleConfig.lockScale = constrain(scaleConfig.lockScale + amt, 0, 1);
+	// 	}
+	// 	if (selParam == 4)
+	// 	{
+	// 		scaleConfig.group16 = constrain(scaleConfig.group16 + amt, 0, 1);
+	// 	}
+	// }
+	// else if (selPage == FORMPAGE_CFG)
+	// {
+	// 	if (selParam == 3)
+	// 	{
+	// 		clockConfig.globalQuantizeStepIndex = constrain(clockConfig.globalQuantizeStepIndex + amt, 0, kNumArpRates - 1);
+	// 	}
+	// 	else if (selParam == 4)
+	// 	{
+	// 		cvNoteUtil.triggerMode = constrain(cvNoteUtil.triggerMode + amt, 0, 1);
+	// 	}
+	// }
+
+	// omxDisp.setDirty();
 }
 
 void OmxModeForm::onEncoderButtonDown()
@@ -443,14 +476,17 @@ void OmxModeForm::onEncoderButtonDown()
 	if (auxMacroManager_.onEncoderButtonDown())
 		return;
 
-	if (params.isPageAndParam(FORMPAGE_CFG, 0))
-	{
-		auxMacroManager_.enableSubmode(&omxUtil.subModePotConfig);
-		omxDisp.isDirty();
-		return;
-	}
+	auto selMachine = getSelectedMachine();
+	selMachine->onEncoderButtonDown();
 
-	encoderSelect = !encoderSelect;
+	// if (params.isPageAndParam(FORMPAGE_CFG, 0))
+	// {
+	// 	auxMacroManager_.enableSubmode(&omxUtil.subModePotConfig);
+	// 	omxDisp.isDirty();
+	// 	return;
+	// }
+
+	omxFormGlobal.encoderSelect = !omxFormGlobal.encoderSelect;
 	omxDisp.isDirty();
 }
 
@@ -490,106 +526,149 @@ void OmxModeForm::onKeyUpdate(OMXKeypadEvent e)
 	if (onKeyUpdateSelMidiFX(e))
 		return;
 
+	updateShortcutMode();
+
 	int thisKey = e.key();
 
 	// AUX KEY
 	if (thisKey == 0)
 	{
 		midiSettings.midiAUX = e.down();
+		omxLeds.setDirty();
+		omxDisp.setDirty();
 		return;
 	}
 
-	uint8_t shortcutMode = getShortcutMode();
+	auto selMachine = machines_[selectedMachine_];
 
-	switch (shortcutMode)
+	if(selMachine->doesConsumeKeys())
 	{
-	case FORMSHORTCUT_AUX:
+		selMachine->onKeyUpdate(e);
+		return;
+	}
+
+	switch (omxFormGlobal.formMode)
 	{
-		if (!e.held() && e.down())
+	case FORMMODE_BASE:
+	{
+		switch (omxFormGlobal.shortcutMode)
 		{
-			// if (thisKey == 11 || thisKey == 12) // Change Octave
-			// {
-			// 	int amt = thisKey == 11 ? -1 : 1;
-			// 	midiSettings.octave = constrain(midiSettings.octave + amt, -5, 4);
-			// }
-			if (auxMacroManager_.isMFXQuickEditEnabled() == false && (thisKey == 1 || thisKey == 2)) // Change Param selection
+		case FORMSHORTCUT_AUX:
+		{
+			if (!e.held() && e.down())
 			{
-				if (thisKey == 1)
+				// if (thisKey == 11 || thisKey == 12) // Change Octave
+				// {
+				// 	int amt = thisKey == 11 ? -1 : 1;
+				// 	midiSettings.octave = constrain(midiSettings.octave + amt, -5, 4);
+				// }
+				if (auxMacroManager_.isMFXQuickEditEnabled() == false && (thisKey == 1 || thisKey == 2)) // Change Param selection
 				{
-					params.decrementParam();
+					if (thisKey == 1)
+					{
+						params.decrementParam();
+					}
+					else if (thisKey == 2)
+					{
+						params.incrementParam();
+					}
 				}
-				else if (thisKey == 2)
+				else if (thisKey == 3)
 				{
-					params.incrementParam();
+					// changeMode(DRUMMODE_LOADKIT);
+					return;
+				}
+				else if (thisKey == 4)
+				{
+					// changeMode(DRUMMODE_SAVEKIT);
+					return;
+				}
+				else if (thisKey == 11 || thisKey == 12)
+				{
+					// saveKit(selDrumKit);
+
+					// int8_t amt = thisKey == 11 ? -1 : 1;
+					// uint8_t newKitIndex = (selDrumKit + NUM_DRUM_KITS + amt) % NUM_DRUM_KITS;
+					// loadKit(newKitIndex);
+
+					// omxDisp.displayMessage("Loaded " + String(newKitIndex + 1));
 				}
 			}
-			else if (thisKey == 3)
+		}
+		break;
+		case FORMSHORTCUT_F1: // Copy
+		{
+			if (!e.held() && e.down())
 			{
-				// changeMode(DRUMMODE_LOADKIT);
-				return;
+				if (thisKey >= 3 && thisKey < 11)
+				{
+					copyMachineAt(thisKey - 3);
+				}
 			}
-			else if (thisKey == 4)
+		}
+		break;
+		case FORMSHORTCUT_F2: // Paste
+		{
+			if (!e.held() && e.down())
 			{
-				// changeMode(DRUMMODE_SAVEKIT);
-				return;
+				if (thisKey >= 3 && thisKey < 11)
+				{
+					pasteMachineTo(thisKey - 3);
+				}
 			}
-			else if (thisKey == 11 || thisKey == 12)
+		}
+		break;
+		case FORMSHORTCUT_F3: // Cut
+		{
+			if (!e.held() && e.down())
 			{
-				// saveKit(selDrumKit);
+				if (thisKey >= 3 && thisKey < 11)
+				{
+					cutMachineAt(thisKey - 3);
+				}
+			}
+		}
+		break;
+		default:
+		{
+			// Key pressed
+			if (!e.held() && e.down())
+			{
+				if (thisKey >= 3 && thisKey < 11)
+				{
+					selectMachine(thisKey - 3);
+					// selectMachineMode_ = true;
+				}
+			}
+			// Key released
+			else if (!e.down() && !e.down())
+			{
+			}
 
-				// int8_t amt = thisKey == 11 ? -1 : 1;
-				// uint8_t newKitIndex = (selDrumKit + NUM_DRUM_KITS + amt) % NUM_DRUM_KITS;
-				// loadKit(newKitIndex);
-
-				// omxDisp.displayMessage("Loaded " + String(newKitIndex + 1));
-			}
+			selMachine->onKeyUpdate(e);
+		}
+		break;
 		}
 	}
 	break;
-	case FORMSHORTCUT_F1: // Copy
+	case FORMMODE_SELECTMACHINE:
 	{
 		if (!e.held() && e.down())
 		{
-			if (thisKey >= 3 && thisKey < 11)
+			if (thisKey >= 11 && thisKey < 27)
 			{
-				copyMachineAt(thisKey - 3);
+				changeMachineAtIndex(selectedMachine_, thisKey - 11);
 			}
 		}
-	}
-	break;
-	case FORMSHORTCUT_F2: // Paste
-	{
-		if (!e.held() && e.down())
+		else if (!e.held() && !e.down())
 		{
-			if (thisKey >= 3 && thisKey < 11)
+			// Exit machine select
+			if (thisKey >= 3 && thisKey - 3 == selectedMachine_)
 			{
-				pasteMachineTo(thisKey - 3);
+				changeFormMode(FORMMODE_BASE);
 			}
 		}
 	}
-	break;
-	case FORMSHORTCUT_F3: // Cut
-	{
-		if (!e.held() && e.down())
-		{
-			if (thisKey >= 3 && thisKey < 11)
-			{
-				cutMachineAt(thisKey - 3);
-			}
-		}
-	}
-	break;
-	default:
-	{
-		if (!e.held() && e.down())
-		{
-			if (thisKey >= 3 && thisKey < 11)
-			{
-				selectMachine(thisKey - 3);
-			}
-		}
-	}
-
 	break;
 	}
 
@@ -599,9 +678,7 @@ void OmxModeForm::onKeyUpdate(OMXKeypadEvent e)
 
 bool OmxModeForm::onKeyUpdateSelMidiFX(OMXKeypadEvent e)
 {
-	uint8_t mfxIndex = 0;
-
-	if (auxMacroManager_.onKeyUpdateAuxMFXShortcuts(e, mfxIndex))
+	if (auxMacroManager_.onKeyUpdateAuxMFXShortcuts(e, omxFormGlobal.selMidiFX))
 		return true;
 
 	return false;
@@ -609,9 +686,7 @@ bool OmxModeForm::onKeyUpdateSelMidiFX(OMXKeypadEvent e)
 
 bool OmxModeForm::onKeyHeldSelMidiFX(OMXKeypadEvent e)
 {
-	uint8_t mfxIndex = 0;
-
-	if (auxMacroManager_.onKeyHeldAuxMFXShortcuts(e, mfxIndex))
+	if (auxMacroManager_.onKeyHeldAuxMFXShortcuts(e, omxFormGlobal.selMidiFX))
 		return true;
 
 	return false;
@@ -624,6 +699,36 @@ void OmxModeForm::onKeyHeldUpdate(OMXKeypadEvent e)
 
 	if (onKeyHeldSelMidiFX(e))
 		return;
+
+	auto selMachine = getSelectedMachine();
+
+	if(selMachine->doesConsumeKeys())
+	{
+		selMachine->onKeyHeldUpdate(e);
+		return;
+	}
+
+	int thisKey = e.key();
+
+	switch (omxFormGlobal.formMode)
+	{
+	case FORMMODE_BASE:
+	{
+		if (thisKey >= 3 && thisKey < 11)
+		{
+			selectMachine(thisKey - 3);
+			changeFormMode(FORMMODE_SELECTMACHINE);
+			return;
+		}
+		selMachine->onKeyHeldUpdate(e);
+	}
+	break;
+	case FORMMODE_SELECTMACHINE:
+	{
+
+	}
+		break;
+	}
 }
 
 void OmxModeForm::updateLEDs()
@@ -637,7 +742,15 @@ void OmxModeForm::updateLEDs()
 		return;
 	}
 
-	// bool blinkState = omxLeds.getBlinkState();
+	auto selMachine = getSelectedMachine();
+
+	if(selMachine->doesConsumeLEDs())
+	{
+		selMachine->updateLEDs();
+		return;
+	}
+
+	bool blinkState = omxLeds.getBlinkState();
 	bool slowBlink = omxLeds.getSlowBlinkState();
 
 	for (uint8_t i = 0; i < kNumMachines; i++)
@@ -645,6 +758,24 @@ void OmxModeForm::updateLEDs()
 		int color = (i == selectedMachine_ && slowBlink) ? LEDOFF : getMachineColor(i);
 
 		strip.setPixelColor(i + 3, color);
+	}
+
+	if (omxFormGlobal.shortcutMode == FORMSHORTCUT_NONE && omxFormGlobal.formMode == FORMMODE_SELECTMACHINE)
+	{
+		for (uint8_t i = 0; i < FORMMACH_COUNT; i++)
+		{
+			bool typeIsSelected = i == machines_[selectedMachine_]->getType();
+
+			int blinkColor = i == 0 ? DKRED : LEDOFF;
+
+			int color = (typeIsSelected && blinkState) ? blinkColor : kMachineColors[i];
+
+			strip.setPixelColor(i + 11, color);
+		}
+	}
+	else if(omxFormGlobal.formMode == FORMMODE_BASE)
+	{
+		selMachine->updateLEDs();
 	}
 }
 
@@ -667,29 +798,78 @@ void OmxModeForm::onDisplayUpdate()
 	if (omxDisp.isDirty() == false)
 		return;
 
-	uint8_t shortcutMode = getShortcutMode();
+	auto selMachine = getSelectedMachine();
 
-	switch (shortcutMode)
+	if(selMachine->doesConsumeDisplay())
+	{
+		selMachine->onDisplayUpdate();
+		return;
+	}
+
+	bool dispLabel = false;
+	bool dispParams = true;
+
+	switch (omxFormGlobal.shortcutMode)
 	{
 	case FORMSHORTCUT_AUX:
-		tempString = "Aux";
+		// tempString = "Aux";
 		break;
 	case FORMSHORTCUT_F1:
 		tempString = "Copy";
+		dispLabel = true;
 		break;
 	case FORMSHORTCUT_F2:
 		tempString = "Paste";
+		dispLabel = true;
 		break;
 	case FORMSHORTCUT_F3:
 		tempString = "Cut";
+		dispLabel = true;
 		break;
 	default:
-		tempString = String(selectedMachine_ + 1) + " " + getMachineName(selectedMachine_);
+	{
+		if(omxFormGlobal.formMode == FORMMODE_SELECTMACHINE)
+		{
+			// tempString = String(selectedMachine_ + 1) + " TYPE";
+			omxDisp.dispGenericModeLabelDoubleLine("Machine Type", getMachineName(selectedMachine_), 0, 0);
+			return;
+			// dispParams = false;
+		}
+		else if(omxFormGlobal.formMode == FORMMODE_BASE)
+		{
+			selMachine->onDisplayUpdate();
+			return;
+		}
+	}
 		break;
 	}
 
-	omxDisp.dispGenericModeLabel(tempString.c_str(), 1, 1);
+	if(dispLabel){
+		omxDisp.dispGenericModeLabel(tempString.c_str(), 0, 0);
+	}
+	else if(dispParams)
+	{
+		omxDisp.clearLegends();
 
+		switch (params.getSelPage())
+		{
+		case FORMPAGE_INSPECT:
+		{
+			omxDisp.setLegend(0, "P CC", potSettings.potCC);
+			omxDisp.setLegend(1, "P VAL", potSettings.potCC);
+			omxDisp.setLegend(2, "NOTE", potSettings.potCC);
+			omxDisp.setLegend(3, "VEL", potSettings.potCC);
+		}
+		break;
+
+		default:
+			break;
+		}
+
+		omxDisp.dispGenericMode2(params.getNumPages(), params.getSelPage(), params.getSelParam(), getEncoderSelect());
+		// omxDisp.dispGenericModeLabelDoubleLine
+
+	}
 	// if (params.getSelPage() == FORMPAGE_INSPECT)
 	// {
 	// 	omxDisp.clearLegends();
@@ -838,7 +1018,7 @@ void OmxModeForm::inMidiControlChange(byte channel, byte control, byte value)
 
 void OmxModeForm::SetScale(MusicScales *scale)
 {
-	musicScale = scale;
+	omxFormGlobal.musicScale = scale;
 	auxMacroManager_.SetScale(scale);
 }
 
@@ -891,7 +1071,7 @@ void OmxModeForm::SetScale(MusicScales *scale)
 // Called via doNoteOnForwarder
 void OmxModeForm::doNoteOn(uint8_t keyIndex)
 {
-	MidiNoteGroup noteGroup = omxUtil.midiNoteOn2(musicScale, keyIndex, midiSettings.defaultVelocity, sysSettings.midiChannel);
+	MidiNoteGroup noteGroup = omxUtil.midiNoteOn2(omxFormGlobal.musicScale, keyIndex, midiSettings.defaultVelocity, sysSettings.midiChannel);
 
 	if (noteGroup.noteNumber == 255)
 		return;

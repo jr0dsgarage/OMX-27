@@ -20,7 +20,7 @@ bool FormMachineInterface::isEnabled()
 
 bool FormMachineInterface::getEncoderSelect()
 {
-	return encoderSelect_;
+	return omxFormGlobal.encoderSelect && !midiSettings.midiAUX;
 }
 
 void FormMachineInterface::onEncoderChanged(Encoder::Update enc)

@@ -2,7 +2,6 @@
 
 #include "../modes/omx_mode_interface.h"
 #include "../utils/aux_macro_manager.h"
-#include "../utils/music_scales.h"
 #include "../utils/param_manager.h"
 #include "../modes/submodes/submode_midifxgroup.h"
 #include "../modes/submodes/submode_potconfig.h"
@@ -125,12 +124,11 @@ private:
 	static const uint8_t kNumMachines = 8;
 
 	SubModePreset presetManager;
-	MusicScales *musicScale;
 
 	bool initSetup = false;
 
 	// If true, encoder selects param rather than modifies value
-	bool encoderSelect = false;
+	// bool encoderSelect = false;
 	// void onEncoderChangedSelectParam(Encoder::Update enc);
 	ParamManager params;
 
@@ -139,6 +137,8 @@ private:
 	uint8_t selectedMachine_;
 
 	// uint8_t copiedMachineIndex_;
+
+	void changeFormMode(uint8_t newFormMode);
 
 	FormMachineInterface *machines_[kNumMachines];
 
@@ -150,10 +150,11 @@ private:
 	const char *getMachineName(uint8_t machineIndex);
 	int getMachineColor(uint8_t machineIndex);
 
-
-
 	void selectMachine(uint8_t machineIndex);
 
+	FormMachineInterface* getSelectedMachine();
+
+	void changeMachineAtIndex(uint8_t machineIndex, uint8_t machineType);
 	void changeMachineAtIndex(uint8_t machineIndex, FormMachineType machineType);
 
 	void cutMachineAt(uint8_t machineIndex);
@@ -169,7 +170,7 @@ private:
 
 	void cleanup();
 
-	uint8_t getShortcutMode();
+	void updateShortcutMode();
 
 	bool getEncoderSelect();
 

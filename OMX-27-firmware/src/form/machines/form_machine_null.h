@@ -1,3 +1,4 @@
+#pragma once
 #include "form_machine_interface.h"
 
 // Very powerful step sequencer
