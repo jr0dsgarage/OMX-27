@@ -671,7 +671,9 @@ void OmxModeMidiKeyboard::inMidiNoteOn(byte channel, byte note, byte velocity)
 	{
 		keyColor = CYAN;
 	}
-	strip.setPixelColor(midiKeyMap[thisKey], keyColor); //  Set pixel's color (in RAM)
+
+	// Add 1 to account for the B at front
+	strip.setPixelColor(midiKeyMap[thisKey + 1], keyColor); //  Set pixel's color (in RAM)
 														//	dirtyPixels = true;
 	strip.show();
 	omxDisp.setDirty();
@@ -692,7 +694,8 @@ void OmxModeMidiKeyboard::inMidiNoteOff(byte channel, byte note, byte velocity)
 	{
 		thisKey = note - (12 * whatoct) + 12;
 	}
-	strip.setPixelColor(midiKeyMap[thisKey], LEDOFF); //  Set pixel's color (in RAM)
+	// Add 1 to account for the B at front
+	strip.setPixelColor(midiKeyMap[thisKey + 1], LEDOFF); //  Set pixel's color (in RAM)
 													  //	dirtyPixels = true;
 	strip.show();
 	omxDisp.setDirty();

@@ -14,6 +14,12 @@ namespace FormOmni
         OMNIPAGE_COUNT
     };
 
+    const int stepOnRootColor = 0xA2A2FF;
+    const int stepOnScaleColor = 0x000090;
+
+    const int stepOffRootColor = RED;
+    const int stepOffScaleColor = DKRED;
+
     OmniNoteEditor::OmniNoteEditor()
     {
     }
@@ -34,7 +40,49 @@ namespace FormOmni
 
     void OmniNoteEditor::updateLEDs(Track *track)
     {
-        omxLeds.drawMidiLeds(omxFormGlobal.musicScale);
+        bool isStepOn = track->isStepOn(selStep_);
+        int rootColor = isStepOn ? stepOnRootColor : stepOffRootColor;
+        int scaleColor = isStepOn ? stepOnScaleColor : stepOffScaleColor;
+
+        if(scaleConfig.scalePattern < 0 && !isStepOn)
+        {
+            omxLeds.setAllLEDS(stepOffScaleColor);
+        }
+        else
+        {
+            omxLeds.drawKeyboardScaleLEDs(omxFormGlobal.musicScale, rootColor, scaleColor, LEDOFF);
+        }
+
+        bool blinkState = omxLeds.getSlowBlinkState();
+
+        auto stepNotes = track->steps[selStep_].notes;
+
+        int viewStartNote = notes[11] + (midiSettings.octave * 12); // Which note is key 11?
+        int viewEndNote = notes[26] + (midiSettings.octave * 12);
+
+        for(uint8_t i = 0; i < 6; i++)
+        {
+            if(stepNotes[i] >= 0 && stepNotes[i] <= 127)
+            {
+                int8_t noteNumber = stepNotes[i];
+
+                bool noteInView = noteNumber >= viewStartNote && noteNumber <= viewEndNote;
+
+                int8_t keyIndex = omxUtil.noteNumberToKeyNumber(noteNumber);
+
+                if(keyIndex >= 0)
+                {
+                    auto color = noteInView ? LTYELLOW : ORANGE;
+                    strip.setPixelColor(keyIndex, color);
+                }
+            }
+        }
+
+        if(blinkState)
+        {
+            uint8_t sel16 = selStep_ % 16;
+            strip.setPixelColor(11 + sel16, HALFWHITE);
+        }
     }
     void OmniNoteEditor::onKeyUpdate(OMXKeypadEvent e, Track *track)
     {
@@ -52,25 +100,24 @@ namespace FormOmni
             {
                 if(midiSettings.keyState[i])
                 {
+                    // Serial.println("HeldKey: " + String(i));
                     heldKeys.push_back(i);
                 }
             }
-
-            std::sort(heldKeys.begin(), heldKeys.end());
-
-            uint8_t keyIndex = 0;
 
             std::vector<uint8_t> noteNumbers;
 
             for (uint8_t i = 0; i < heldKeys.size(); i++)
             {
-                int8_t noteNumber = omxUtil.getNoteNumber(heldKeys[keyIndex], omxFormGlobal.musicScale);
+                int8_t noteNumber = omxUtil.getNoteNumber(heldKeys[i], omxFormGlobal.musicScale);
 
                 if (noteNumber >= 0 && noteNumber <= 127)
                 {
                     noteNumbers.push_back(noteNumber);
                 }
             }
+
+            std::sort(noteNumbers.begin(), noteNumbers.end());
 
             for(uint8_t i = 0; i < 6; i++)
             {
@@ -91,7 +138,7 @@ namespace FormOmni
     }
     void OmniNoteEditor::onDisplayUpdate(Track *track)
     {
-        auto notes = track->steps[selStep_].notes;
+        auto trackNotes = track->steps[selStep_].notes;
 
         // omxDisp.setLegend(0, "NT 1", notes[0]);
         // omxDisp.setLegend(0, "NT 2", notes[0]);
@@ -99,37 +146,33 @@ namespace FormOmni
         // omxDisp.setLegend(0, "NT 4", notes[0]);
 
         tempString = "";
-        // notesString2 = "";
-        int dispNotes[6];
-        int8_t rootNote = -1;
+        int8_t noteKeys[6];
 
         for (uint8_t i = 0; i < 6; i++)
         {
-            int8_t note = notes[i];
-            dispNotes[i] = note;
+            int8_t note = trackNotes[i];
 
             if (note >= 0 && note <= 127)
             {
-                if (rootNote < 0 || note < rootNote)
-                {
-                    rootNote = note;
-                }
-
-                if (i > 0)
-                {
-                    tempString.append(" ");
-                }
+                noteKeys[i] = omxUtil.noteNumberToKeyNumber(note);
                 tempString.append(omxFormGlobal.musicScale->getFullNoteName(note));
+            }
+            else
+            {
+                noteKeys[i] = -1;
             }
         }
 
-        tempStrings[0] = String(selStep_ + 1);
+        uint8_t step16 = selStep_ % 16 + 1;
+        uint8_t bar = (selStep_) / 16 + 1;
+
+        tempStrings[0] = String(step16) + ":" + String(bar);
 
         const char *labels[2];
         labels[0] = tempStrings[0].c_str();
         labels[1] = tempString.c_str();
 
-        omxDisp.dispKeyboard(rootNote, dispNotes, true, labels, 1);
+        omxDisp.dispSeqKeyboard(noteKeys, true, labels, 2);
 
         // omxDisp.dispGenericModeLabel("Note Editor");
     }
@@ -138,6 +181,8 @@ namespace FormOmni
     }
     void OmniNoteEditor::onEncoderChangedEditParam(Encoder::Update enc, Track *track)
     {
+        int8_t amt = enc.accel(1);
+        selStep_ = constrain(selStep_ + amt, 0, 64-1);
     }
 
     OmniNoteEditor omniNoteEditor;

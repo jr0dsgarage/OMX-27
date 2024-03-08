@@ -143,6 +143,13 @@ namespace FormOmni
             playMode = TRACKMODE_NONE;
             midiFx = 0;
         }
+
+        bool isStepOn(uint8_t stepIndex)
+        {
+            if(stepIndex > len) return false;
+
+            return !steps[stepIndex].mute;
+        }
     };
 
     // Saved sequencer variables

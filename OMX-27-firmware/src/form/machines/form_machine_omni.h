@@ -48,6 +48,7 @@ namespace FormOmni
         void onEncoderChangedSelectParam(Encoder::Update enc);
         void onEncoderChangedEditParam(Encoder::Update enc);
 
+        void changeUIMode(uint8_t newMode, bool silent);
         void onUIModeChanged(uint8_t prevMode, uint8_t newMode);
 
         Track *getTrack();

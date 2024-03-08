@@ -59,7 +59,9 @@ public:
 	void dispCenteredSlots(const char *slotNames[], uint8_t slotCount, uint8_t selected, bool encoderSelect, bool showLabels, bool centerLabels, const char *labels[], uint8_t labelCount);
 
 	// noteNumbers should be array of 6
+	void dispSeqKeyboard(int8_t notesAsKeys[], bool showLabels, const char *labels[], uint8_t labelCount);
 	void dispKeyboard(int rootNote, int noteNumbers[], bool showLabels, const char *labels[], uint8_t labelCount);
+	void drawKeyboard(bool blackNotes[10], bool whiteNotes[16]);
 
 	void dispChordBasicPage(uint8_t selected, bool encoderSelect, const char *noteName, const char *octaveName, const char *chordType, int8_t balArray[], float velArray[]);
 	void chordBalanceMsg(int8_t balArray[], float velArray[], uint8_t secs);

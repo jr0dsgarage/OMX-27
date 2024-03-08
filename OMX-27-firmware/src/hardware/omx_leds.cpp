@@ -162,6 +162,31 @@ void OmxLeds::drawMidiLeds(MusicScales *scale)
 	dirtyPixels = true;
 }
 
+void OmxLeds::drawKeyboardScaleLEDs(MusicScales *scale, int rootColor, int inScaleColor, int offScaleColor)
+{
+	// clear not held leds
+	for (int q = 1; q < LED_COUNT; q++)
+	{
+		if (midiSettings.midiKeyState[q] == -1)
+		{
+			int keyColor = getKeyColor(scale, q);
+
+			int pixelColor = offScaleColor;
+
+			if(keyColor == INSCALECOLOR)
+			{
+				pixelColor = inScaleColor;
+			}
+			else if(keyColor == ROOTNOTECOLOR)
+			{
+				pixelColor = rootColor;
+			}
+
+			strip.setPixelColor(q, pixelColor);
+		}
+	}
+}
+
 bool OmxLeds::getBlinkState()
 {
 	return blinkState;
@@ -197,6 +222,15 @@ bool OmxLeds::getBlinkPattern(uint8_t numberOfBlinks)
 	// }
 
 	return blink;
+}
+
+void OmxLeds::setAllLEDS(int color)
+{
+	for (int i = 0; i < LED_COUNT; i++)
+	{ // For each pixel...
+		strip.setPixelColor(i, color);
+	}
+	setDirty();
 }
 
 void OmxLeds::setAllLEDS(int R, int G, int B)

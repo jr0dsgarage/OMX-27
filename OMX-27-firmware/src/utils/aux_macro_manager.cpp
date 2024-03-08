@@ -293,7 +293,7 @@ bool AuxMacroManager::onKeyUpdate(OMXKeypadEvent e)
                 omxDisp.setDirty();
                 return true;
             }
-            return true;
+            return false;
         }
     }
     else // Macro mode active

@@ -139,63 +139,99 @@ namespace FormOmni
         int8_t selPage = trackParams_.getSelPage();
         int8_t selParam = trackParams_.getSelParam();
 
-        switch (selPage)
+        switch (omniUiMode_)
         {
-        case OMNIPAGE_GBL1: // BPM
+        case OMNIUIMODE_CONFIG:
+        case OMNIUIMODE_MIX:
         {
-        }
-        break;
-        case OMNIPAGE_1: // Velocity, Channel, Rate, Gate
-        {
-            switch (selParam)
+            switch (selPage)
             {
-            case 0:
-                break;
-            case 1:
-                seq_.channel = constrain(seq_.channel + amtSlow, 0, 15);
-                break;
-            case 2:
-                break;
-            case 3:
-                seq_.gate = constrain(seq_.gate + amtFast, 0, 100);
-                break;
+            case OMNIPAGE_GBL1: // BPM
+            {
+            }
+            break;
+            case OMNIPAGE_1: // Velocity, Channel, Rate, Gate
+            {
+                switch (selParam)
+                {
+                case 0:
+                    break;
+                case 1:
+                    seq_.channel = constrain(seq_.channel + amtSlow, 0, 15);
+                    break;
+                case 2:
+                    break;
+                case 3:
+                    seq_.gate = constrain(seq_.gate + amtFast, 0, 100);
+                    break;
+                }
+            }
+            break;
+            case OMNIPAGE_2: // Transpose, TransposeMode
+            {
+                switch (selParam)
+                {
+                case 0:
+                    seq_.transpose = constrain(seq_.transpose + amtSlow, -64, 64);
+                    break;
+                case 1:
+                    seq_.transposeMode = constrain(seq_.transposeMode + amtSlow, 0, 1);
+                    break;
+                }
+            }
+            break;
+            case OMNIPAGE_3: // SendMidi, SendCV
+            {
+                switch (selParam)
+                {
+                case 0:
+                    seq_.sendMidi = constrain(seq_.sendMidi + amtSlow, 0, 1);
+                    break;
+                case 1:
+                    seq_.sendCV = constrain(seq_.sendCV + amtSlow, 0, 1);
+                    break;
+                }
+            }
+            break;
+            case OMNIPAGE_TPAT: // SendMidi, SendCV
+            {
+            }
+            break;
             }
         }
         break;
-        case OMNIPAGE_2: // Transpose, TransposeMode
+        case OMNIUIMODE_LENGTH:
+        case OMNIUIMODE_TRANSPOSE:
+            break;
+        case OMNIUIMODE_STEP:
+        case OMNIUIMODE_NOTEEDIT:
         {
-            switch (selParam)
-            {
-            case 0:
-                seq_.transpose = constrain(seq_.transpose + amtSlow, -64, 64);
-                break;
-            case 1:
-                seq_.transposeMode = constrain(seq_.transposeMode + amtSlow, 0, 1);
-                break;
-            }
-        }
-        break;
-        case OMNIPAGE_3: // SendMidi, SendCV
-        {
-            switch (selParam)
-            {
-            case 0:
-                seq_.sendMidi = constrain(seq_.sendMidi + amtSlow, 0, 1);
-                break;
-            case 1:
-                seq_.sendCV = constrain(seq_.sendCV + amtSlow, 0, 1);
-                break;
-            }
-        }
-        break;
-        case OMNIPAGE_TPAT: // SendMidi, SendCV
-        {
+            omniNoteEditor.onEncoderChangedEditParam(enc, getTrack());
         }
         break;
         }
 
         omxDisp.setDirty();
     }
+
+    void FormMachineOmni::changeUIMode(uint8_t newMode, bool silent)
+    {
+        if (newMode >= OMNIUIMODE_COUNT)
+            return;
+
+        if (newMode != omniUiMode_)
+        {
+            uint8_t prevMode = omniUiMode_;
+            omniUiMode_ = newMode;
+            onUIModeChanged(prevMode, newMode);
+
+            if (!silent)
+            {
+                omxDisp.displayMessage(kUIModeMsg[omniUiMode_]);
+            }
+        }
+    }
+
     void FormMachineOmni::onUIModeChanged(uint8_t prevMode, uint8_t newMode)
     {
         // Tell Note editor it's been started for step mode
@@ -203,17 +239,16 @@ namespace FormOmni
 
     void FormMachineOmni::onPotChanged(int potIndex, int prevValue, int newValue, int analogDelta)
     {
-        if(potIndex == 4)
+        // Serial.println("onPotChanged: " + String(potIndex) + " " + String(prevValue) + " " + String(newValue));
+
+        if (potIndex == 4)
         {
             uint8_t newUIMode = map(newValue, 0, 127, 0, OMNIUIMODE_COUNT - 1);
-            if(newUIMode != omniUiMode_)
-            {
-                onUIModeChanged(omniUiMode_, newUIMode);
-                omniUiMode_ = newUIMode;
-                omxDisp.displayMessage(kUIModeMsg[omniUiMode_]);
-            }
+
+            changeUIMode(newUIMode, false);
         }
     }
+
     void FormMachineOmni::onClockTick()
     {
     }
@@ -257,7 +292,19 @@ namespace FormOmni
         if (e.held())
             return false;
 
+        omxDisp.setDirty();
+        omxLeds.setDirty();
+
         uint8_t thisKey = e.key();
+
+        if (omxFormGlobal.shortcutMode == FORMSHORTCUT_AUX)
+        {
+            if (e.down() && thisKey >= 13 && thisKey < 19)
+            {
+                changeUIMode(thisKey - 13, false);
+                return true;
+            }
+        }
 
         switch (omniUiMode_)
         {
@@ -283,8 +330,7 @@ namespace FormOmni
             break;
         }
 
-        omxDisp.setDirty();
-        omxLeds.setDirty();
+        
 
         return false;
     }

@@ -13,8 +13,6 @@ OmxDisp::OmxDisp()
 {
 }
 
-
-
 void OmxDisp::setup()
 {
 	initializeDisplay();
@@ -917,6 +915,56 @@ void OmxDisp::dispCenteredSlots(const char *slotNames[], uint8_t slotCount, uint
 	}
 }
 
+void OmxDisp::dispSeqKeyboard(int8_t notesAsKeys[], bool showLabels, const char *labels[], uint8_t labelCount)
+{
+	if (isMessageActive())
+	{
+		renderMessage();
+		return;
+	}
+
+	display.fillRect(0, 0, 128, 32, BLACK);
+
+	// Find and split up black and white notes
+	bool blackNotes[10];
+	bool whiteNotes[16];
+
+	for (uint8_t i = 0; i < 16; i++)
+	{
+		if (i < 10)
+		{
+			blackNotes[i] = false;
+		}
+		whiteNotes[i] = false;
+	}
+
+	for (uint8_t i = 0; i < 6; i++)
+	{
+		int8_t key = notesAsKeys[i];
+
+		if(key >= 1 && key <= 26)
+		{
+			if(key >= 11)
+			{
+				whiteNotes[key - 11] = true;
+			}
+			else
+			{
+				blackNotes[key - 1] = true;
+			}
+		}
+	}
+
+	drawKeyboard(blackNotes, whiteNotes);
+
+	if (showLabels)
+	{
+		// int8_t selIndex = constrain(selected - 16, -1, 127);
+		dispLabelParams(-1, true, labels, labelCount, true);
+	}
+
+}
+
 void OmxDisp::dispKeyboard(int rootNote, int noteNumbers[], bool showLabels, const char *labels[], uint8_t labelCount)
 {
 	if (isMessageActive())
@@ -925,19 +973,19 @@ void OmxDisp::dispKeyboard(int rootNote, int noteNumbers[], bool showLabels, con
 		return;
 	}
 
-	const uint8_t wkWidth = 7;
-	const uint8_t wkInc = 6;
+	// const uint8_t wkWidth = 7;
+	// const uint8_t wkInc = 6;
 
-	const uint8_t wkHeight = 22;
-	const uint8_t wkStartX = 16;
-	const uint8_t wkStartY = 10;
+	// const uint8_t wkHeight = 22;
+	// const uint8_t wkStartX = 16;
+	// const uint8_t wkStartY = 10;
 
-	const uint8_t bkWidth = 7;
-	const uint8_t bkInc = 6;
+	// const uint8_t bkWidth = 7;
+	// const uint8_t bkInc = 6;
 
-	const uint8_t bkHeight = 16;
-	const uint8_t bkStartX = 13;
-	const uint8_t bkStartY = 9;
+	// const uint8_t bkHeight = 16;
+	// const uint8_t bkStartX = 13;
+	// const uint8_t bkStartY = 9;
 
 	display.fillRect(0, 0, 128, 32, BLACK);
 
@@ -1020,6 +1068,106 @@ void OmxDisp::dispKeyboard(int rootNote, int noteNumbers[], bool showLabels, con
 		}
 	}
 
+	// // draw white keys
+	// for (uint8_t i = 0; i < 16; i++)
+	// {
+	// 	if (whiteNotes[i] == false)
+	// 	{
+	// 		// display.fillRect(startX + (wkWidth * i), wkStartY, wkWidth, wkHeight, WHITE);
+	// 		display.drawRect(wkStartX + (wkInc * i), wkStartY, wkWidth, wkHeight, WHITE);
+	// 	}
+	// }
+
+	// for (uint8_t i = 0; i < 16; i++)
+	// {
+	// 	if (whiteNotes[i])
+	// 	{
+	// 		display.drawRect(wkStartX + (wkInc * i), wkStartY, wkWidth, wkHeight, BLACK);
+	// 		display.fillRect(wkStartX + (wkInc * i) + 1, wkStartY, wkWidth - 2, wkHeight, WHITE);
+	// 	}
+	// }
+
+	// uint8_t bOffset = 0;
+
+	// // draw black keys
+	// // Two additional keys for sides
+	// for (uint8_t i = 0; i < 12; i++)
+	// {
+	// 	bool blackOn = false;
+
+	// 	if (i == 1 || i == 3 || i == 6 || i == 8 || i == 11)
+	// 	{
+	// 		bOffset += 6;
+	// 	}
+
+	// 	uint8_t xStart = bkStartX + bOffset + (bkInc * i);
+
+	// 	if (i > 0 && i < 11)
+	// 	{
+	// 		blackOn = blackNotes[i - 1];
+	// 	}
+	// 	else
+	// 	{
+	// 		display.fillRect(xStart, bkStartY, bkWidth, bkHeight, BLACK);
+	// 		display.drawRect(xStart + 1, bkStartY + 1, bkWidth - 2, bkHeight - 2, WHITE);
+	// 		display.fillRect(xStart + 2, bkStartY, bkWidth - 4, bkHeight - 1, BLACK);
+	// 		continue;
+	// 		;
+	// 	}
+
+	// 	if (blackOn)
+	// 	{
+	// 		display.fillRect(xStart, bkStartY, bkWidth, bkHeight, BLACK);
+	// 		display.fillRect(xStart + 1, bkStartY + 1, bkWidth - 2, bkHeight - 2, WHITE);
+	// 	}
+	// 	else
+	// 	{
+	// 		// display.fillRect(startX + (wkWidth * i), wkStartY, wkWidth, wkHeight, WHITE);
+	// 		display.fillRect(xStart, bkStartY, bkWidth, bkHeight, BLACK);
+	// 		display.drawRect(xStart + 1, bkStartY + 1, bkWidth - 2, bkHeight - 2, WHITE);
+	// 	}
+	// }
+
+	// display.fillRect(0, 10, 16, 32, BLACK);	  // trim left side
+	// display.fillRect(113, 10, 15, 32, BLACK); // trim right side
+	// display.drawLine(18, 10, 110, 10, WHITE); // Cap the top
+
+	// if (!whiteNotes[0])
+	// {
+	// 	display.drawLine(16, 24, 16, 31, WHITE); // Left wall
+	// }
+
+	// if (!whiteNotes[15])
+	// {
+	// 	display.drawLine(112, 24, 112, 31, WHITE); // Right wall
+	// }
+
+	drawKeyboard(blackNotes, whiteNotes);
+
+	if (showLabels)
+	{
+		// int8_t selIndex = constrain(selected - 16, -1, 127);
+		dispLabelParams(-1, true, labels, labelCount, true);
+	}
+}
+
+
+void OmxDisp::drawKeyboard(bool blackNotes[10], bool whiteNotes[16])
+{
+	const uint8_t wkWidth = 7;
+	const uint8_t wkInc = 6;
+
+	const uint8_t wkHeight = 22;
+	const uint8_t wkStartX = 16;
+	const uint8_t wkStartY = 10;
+
+	const uint8_t bkWidth = 7;
+	const uint8_t bkInc = 6;
+
+	const uint8_t bkHeight = 16;
+	const uint8_t bkStartX = 13;
+	const uint8_t bkStartY = 9;
+
 	// draw white keys
 	for (uint8_t i = 0; i < 16; i++)
 	{
@@ -1092,12 +1240,6 @@ void OmxDisp::dispKeyboard(int rootNote, int noteNumbers[], bool showLabels, con
 	if (!whiteNotes[15])
 	{
 		display.drawLine(112, 24, 112, 31, WHITE); // Right wall
-	}
-
-	if (showLabels)
-	{
-		// int8_t selIndex = constrain(selected - 16, -1, 127);
-		dispLabelParams(-1, true, labels, labelCount, true);
 	}
 }
 

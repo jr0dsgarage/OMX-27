@@ -54,10 +54,10 @@ extern "C"{
   int _write(){return -1;}
 }
 
-#define RAM_MONITOR
-#ifdef RAM_MONITOR
-#include "src/utils/RamMonitor.h"
-#endif
+// #define RAM_MONITOR
+// #ifdef RAM_MONITOR
+// #include "src/utils/RamMonitor.h"
+// #endif
 
 OmxModeMidiKeyboard omxModeMidi;
 OmxModeDrum omxModeDrum;

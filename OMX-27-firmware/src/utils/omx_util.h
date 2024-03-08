@@ -67,6 +67,8 @@ public:
 	void allOff();
 
 	int8_t getNoteNumber(uint8_t keyNum, MusicScales *scale);
+	int8_t noteNumberToKeyNumber(int8_t noteNumber);
+
 
 	MidiNoteGroup midiNoteOn2(MusicScales *scale, int notenum, int velocity, int channel);
 	MidiNoteGroup midiNoteOff2(int notenum, int channel);

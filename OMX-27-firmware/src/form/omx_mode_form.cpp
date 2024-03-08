@@ -545,18 +545,63 @@ void OmxModeForm::onKeyUpdate(OMXKeypadEvent e)
 	if (thisKey == 0)
 	{
 		midiSettings.midiAUX = e.down();
-		omxLeds.setDirty();
-		omxDisp.setDirty();
 		return;
+	}
+
+	bool keyConsumed = false;
+
+	// Aux shortcuts for all modes
+	if(omxFormGlobal.shortcutMode == FORMSHORTCUT_AUX)
+	{
+		if (!e.held() && e.down())
+		{
+			if (thisKey == 11 || thisKey == 12) // Change Octave
+			{
+				int amt = thisKey == 11 ? -1 : 1;
+				midiSettings.octave = constrain(midiSettings.octave + amt, -5, 4);
+				omxDisp.displayMessage("Octave: " + String(midiSettings.octave));
+				keyConsumed = true;
+			}
+			else if (auxMacroManager_.isMFXQuickEditEnabled() == false && (thisKey == 1 || thisKey == 2)) // Change Param selection
+			{
+				if (thisKey == 1)
+				{
+					params.decrementParam();
+					omxDisp.displayMessage("PLAY");
+				}
+				else if (thisKey == 2)
+				{
+					params.incrementParam();
+					omxDisp.displayMessage("RESET");
+				}
+				keyConsumed = true;
+			}
+			else if (thisKey == 3)
+			{
+				// changeMode(DRUMMODE_LOADKIT);
+				return;
+			}
+			else if (thisKey == 4)
+			{
+				// changeMode(DRUMMODE_SAVEKIT);
+				return;
+			}
+		}
 	}
 
 	auto selMachine = machines_[selectedMachine_];
 
 	if(selMachine->doesConsumeKeys())
 	{
-		selMachine->onKeyUpdate(e);
+		if(omxFormGlobal.shortcutMode != FORMSHORTCUT_AUX)
+		{
+			selMachine->onKeyUpdate(e);
+		}
 		return;
 	}
+
+	if(keyConsumed)
+	return;
 
 	switch (omxFormGlobal.formMode)
 	{
@@ -565,47 +610,6 @@ void OmxModeForm::onKeyUpdate(OMXKeypadEvent e)
 		switch (omxFormGlobal.shortcutMode)
 		{
 		case FORMSHORTCUT_AUX:
-		{
-			if (!e.held() && e.down())
-			{
-				// if (thisKey == 11 || thisKey == 12) // Change Octave
-				// {
-				// 	int amt = thisKey == 11 ? -1 : 1;
-				// 	midiSettings.octave = constrain(midiSettings.octave + amt, -5, 4);
-				// }
-				if (auxMacroManager_.isMFXQuickEditEnabled() == false && (thisKey == 1 || thisKey == 2)) // Change Param selection
-				{
-					if (thisKey == 1)
-					{
-						params.decrementParam();
-					}
-					else if (thisKey == 2)
-					{
-						params.incrementParam();
-					}
-				}
-				else if (thisKey == 3)
-				{
-					// changeMode(DRUMMODE_LOADKIT);
-					return;
-				}
-				else if (thisKey == 4)
-				{
-					// changeMode(DRUMMODE_SAVEKIT);
-					return;
-				}
-				else if (thisKey == 11 || thisKey == 12)
-				{
-					// saveKit(selDrumKit);
-
-					// int8_t amt = thisKey == 11 ? -1 : 1;
-					// uint8_t newKitIndex = (selDrumKit + NUM_DRUM_KITS + amt) % NUM_DRUM_KITS;
-					// loadKit(newKitIndex);
-
-					// omxDisp.displayMessage("Loaded " + String(newKitIndex + 1));
-				}
-			}
-		}
 		break;
 		case FORMSHORTCUT_F1: // Copy
 		{
@@ -614,6 +618,7 @@ void OmxModeForm::onKeyUpdate(OMXKeypadEvent e)
 				if (thisKey >= 3 && thisKey < 11)
 				{
 					copyMachineAt(thisKey - 3);
+					keyConsumed = true;
 				}
 			}
 		}
@@ -625,6 +630,7 @@ void OmxModeForm::onKeyUpdate(OMXKeypadEvent e)
 				if (thisKey >= 3 && thisKey < 11)
 				{
 					pasteMachineTo(thisKey - 3);
+					keyConsumed = true;
 				}
 			}
 		}
@@ -636,6 +642,7 @@ void OmxModeForm::onKeyUpdate(OMXKeypadEvent e)
 				if (thisKey >= 3 && thisKey < 11)
 				{
 					cutMachineAt(thisKey - 3);
+					keyConsumed = true;
 				}
 			}
 		}
@@ -648,6 +655,7 @@ void OmxModeForm::onKeyUpdate(OMXKeypadEvent e)
 				if (thisKey >= 3 && thisKey < 11)
 				{
 					selectMachine(thisKey - 3);
+					keyConsumed = true;
 					// selectMachineMode_ = true;
 				}
 			}
@@ -656,9 +664,13 @@ void OmxModeForm::onKeyUpdate(OMXKeypadEvent e)
 			{
 			}
 
-			selMachine->onKeyUpdate(e);
 		}
 		break;
+		}
+
+		if(!keyConsumed)
+		{
+			selMachine->onKeyUpdate(e);
 		}
 	}
 	break;
@@ -682,9 +694,6 @@ void OmxModeForm::onKeyUpdate(OMXKeypadEvent e)
 	}
 	break;
 	}
-
-	omxLeds.setDirty();
-	omxDisp.setDirty();
 }
 
 bool OmxModeForm::onKeyUpdateSelMidiFX(OMXKeypadEvent e)

@@ -24,6 +24,8 @@ public:
 
 	int getKeyColor(MusicScales *scale, int pixel);
 	void drawMidiLeds(MusicScales *scale);
+	void drawKeyboardScaleLEDs(MusicScales *scale, int rootColor, int inScaleColor, int offScaleColor);
+
 
 	// clears dirty, transmits pixel data if dirty.
 	void showLeds();
@@ -34,7 +36,9 @@ public:
 	// Blinks for numberOfBlinks then a delay
 	bool getBlinkPattern(uint8_t numberOfBlinks);
 
-	// void setPixelColor(uint16_t n, uint8_t r, uint8_t g, uint8_t b);
+    void setAllLEDS(int color);
+
+    // void setPixelColor(uint16_t n, uint8_t r, uint8_t g, uint8_t b);
 
 	void setAllLEDS(int R, int G, int B);
 

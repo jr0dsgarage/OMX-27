@@ -9,8 +9,8 @@
 const uint8_t rainbowSaturation = 127;
 const uint8_t scaleBrightness = 200;
 
-const auto ROOTNOTECOLOR = 0xA2A2FF;
-const auto INSCALECOLOR = 0x000090;
+const int ROOTNOTECOLOR = 0xA2A2FF;
+const int INSCALECOLOR = 0x000090;
 
 String tempFullNoteName;
 
