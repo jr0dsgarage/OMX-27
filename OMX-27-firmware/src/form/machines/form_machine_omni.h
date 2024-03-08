@@ -20,6 +20,8 @@ namespace FormOmni
         bool doesConsumeKeys() override; 
         bool doesConsumeLEDs() override; 
 
+	    void playBackStateChanged(bool newIsPlaying) override;
+
         // Standard Updates
         void onPotChanged(int potIndex, int prevValue, int newValue, int analogDelta) override;
         void onClockTick() override;
@@ -54,6 +56,15 @@ namespace FormOmni
         Track *getTrack();
 
         void selStep(uint8_t stepIndex); // 0-15
+
+
+        uint8_t playingStep_;
+
+        Micros nextStepTime_;
+
+        float ticksPerStep_;
+
+        void triggerStep(Step *step);
 
         // char foo[sizeof(Track)]
     };

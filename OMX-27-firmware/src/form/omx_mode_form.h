@@ -185,12 +185,26 @@ private:
 	bool onKeyUpdateSelMidiFX(OMXKeypadEvent e);
 	bool onKeyHeldSelMidiFX(OMXKeypadEvent e);
 
-	void doNoteOn(uint8_t keyIndex);
-	void doNoteOff(uint8_t keyIndex);
+    void seqNoteOn(MidiNoteGroup noteGroup, uint8_t midifx);
+    void seqNoteOff(MidiNoteGroup noteGroup, uint8_t midifx);
+
+	static void seqNoteOnForwarder(void *context, MidiNoteGroup note, uint8_t midifx)
+	{
+		static_cast<OmxModeForm *>(context)->seqNoteOn(note, midifx);
+	}
+
+	static void seqNoteOffForwarder(void *context, MidiNoteGroup note, uint8_t midifx)
+	{
+		static_cast<OmxModeForm *>(context)->seqNoteOff(note, midifx);
+	}
+
+    void doNoteOn(uint8_t keyIndex);
+    void doNoteOff(uint8_t keyIndex);
 
 	// Static glue to link a pointer to a member function
 	static void onNotePostFXForwarder(void *context, MidiNoteGroup note)
 	{
+		Serial.println("onNotePostFXForwarder " + String(note.noteNumber));
 		static_cast<OmxModeForm *>(context)->onNotePostFX(note);
 	}
 
@@ -203,6 +217,8 @@ private:
 	}
 
 	void onPendingNoteOff(int note, int channel);
+
+	void togglePlayback();
 
 	void stopSequencers();
 

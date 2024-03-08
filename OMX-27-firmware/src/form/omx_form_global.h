@@ -20,11 +20,16 @@ enum FormMode
 	FORMMODE_COUNT
 };
 
+extern const uint8_t kSeqRates[];
+extern const uint8_t kNumSeqRates;
+
 // Singleton class that form machines and base form mode can use to stay in sync
 class OmxFormGlobalSettings
 {
 public:
 bool encoderSelect = false;
+bool isPlaying = false;
+
 MusicScales *musicScale;
 
 uint8_t shortcutMode;

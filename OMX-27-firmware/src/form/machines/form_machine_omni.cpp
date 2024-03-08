@@ -107,6 +107,15 @@ namespace FormOmni
         return doesConsumeKeys();
     }
 
+    void FormMachineOmni::playBackStateChanged(bool newIsPlaying)
+    {
+        if(newIsPlaying)
+        {
+            nextStepTime_ = seqConfig.lastClockMicros;
+            playingStep_ = 0;
+        }
+    }
+
     Track *FormMachineOmni::getTrack()
     {
         return &seq_.tracks[0];
@@ -117,6 +126,33 @@ namespace FormOmni
         selStep_ = stepIndex;
 
         omniNoteEditor.setSelStep(selStep_);
+    }
+
+    void FormMachineOmni::triggerStep(Step *step)
+    {
+        if(context_ == nullptr || noteOnFuncPtr == nullptr)
+            return;
+
+        for(int8_t i = 0; i < 6; i++)
+        {
+            int8_t noteNumber = step->notes[i];
+
+            if(noteNumber >= 0 && noteNumber <= 127)
+            {
+                Serial.println("triggerStep: " + String(noteNumber));
+                MidiNoteGroup noteGroup;
+                noteGroup.channel = seq_.channel;
+                noteGroup.noteNumber = noteNumber;
+                noteGroup.velocity = step->vel;
+                noteGroup.stepLength = 1;
+                noteGroup.sendMidi = seq_.sendMidi;
+                noteGroup.sendCV = seq_.sendCV;
+                noteGroup.noteonMicros = seqConfig.lastClockMicros;
+                noteGroup.unknownLength = false;
+
+                seqNoteOn(noteGroup, 255);
+            }
+        }
     }
 
     void FormMachineOmni::onEnabled()
@@ -251,7 +287,40 @@ namespace FormOmni
 
     void FormMachineOmni::onClockTick()
     {
+        if(omxFormGlobal.isPlaying == false) return;
+
+        if (seqConfig.lastClockMicros >= nextStepTime_)
+        {
+            // 96 ppq
+            int8_t rate = kSeqRates[seq_.rate];
+
+            auto track = getTrack();
+
+            uint8_t length = track->len + 1;
+
+            ticksPerStep_ = (PPQ * 4) / (float)rate;
+
+            // uint8_t nextStepIndex = playingStep_ + 1 % length;
+
+            auto playingStep = &track->steps[playingStep_];
+            // auto nextStep = &track->steps[nextStepIndex];
+
+            triggerStep(playingStep);
+
+            nextStepTime_ = nextStepTime_ + clockConfig.ppqInterval * ticksPerStep_;
+            playingStep_ = (playingStep_ + 1) % length;
+        }
+
+        // seqConfig.lastClockMicros = ;
+        // if(seqConfig.currentClockTick % 96 == 0)
+        // {
+
+        // }
+        // seqConfig.currentClockTick
+
+        // clockConfig.ppqInterval
     }
+
     void FormMachineOmni::loopUpdate()
     {
     }

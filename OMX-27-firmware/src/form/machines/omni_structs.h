@@ -174,7 +174,7 @@ namespace FormOmni
         OmniSeq()
         {
             transpose = 0;
-            rate = 0;
+            rate = 9;
             transposeMode = 0;
             channel = 0;
             monoPhonic = false;

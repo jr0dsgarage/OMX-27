@@ -2,6 +2,7 @@
 #include "../../ClearUI/ClearUI_Input.h"
 #include "../../hardware/omx_keypad.h"
 #include "../../utils/param_manager.h"
+#include "../../config.h"
 #include "../omx_form_global.h"
 
 enum FormMachineType
@@ -10,8 +11,6 @@ enum FormMachineType
 	FORMMACH_OMNI,
 	FORMMACH_COUNT
 };
-
-
 
 // defines interface for a submode, a mode within a mode
 class FormMachineInterface
@@ -40,6 +39,13 @@ public:
     // Setters
 	virtual void setEnabled(bool newEnabled);
 
+	virtual void playBackStateChanged(bool newIsPlaying) {}
+
+	// Callbacks
+	void setContext(void *context);
+	void setNoteOnFptr(void (*fptr)(void *, MidiNoteGroup, uint8_t));
+	void setNoteOffFptr(void (*fptr)(void *, MidiNoteGroup, uint8_t));
+
     // Standard Updates
 	virtual void onPotChanged(int potIndex, int prevValue, int newValue, int analogDelta) {}
 	virtual void onClockTick() {}
@@ -64,6 +70,14 @@ public:
 protected:
 	bool enabled_;
 	bool encoderSelect_;
+
+	void *context_;
+	void (*noteOnFuncPtr)(void *, MidiNoteGroup, uint8_t);
+	void (*noteOffFuncPtr)(void *, MidiNoteGroup, uint8_t);
+
+	virtual void seqNoteOn(MidiNoteGroup noteGroup, uint8_t midiFx);
+	virtual void onNoteOn(uint8_t channel, uint8_t noteNumber, uint8_t velocity, float stepLength, bool sendMidi, bool sendCV, uint32_t noteOnMicros);
+	
 
 	virtual void onEnabled() {}	 // Called whenever entering mode
 	virtual void onDisabled() {} // Called whenever exiting mode

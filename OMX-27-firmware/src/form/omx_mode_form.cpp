@@ -44,7 +44,16 @@ OmxModeForm::OmxModeForm()
 	for (uint8_t i = 0; i < kNumMachines; i++)
 	{
 		machines_[i] = new FormOmni::FormMachineOmni();
+		// machines_[i]->setContext(this);
+		// machines_[i]->setNoteOnFptr(&OmxModeForm::seqNoteOnForwarder);
+		// machines_[i]->setNoteOffFptr(&OmxModeForm::seqNoteOffForwarder);
 	}
+
+	machines_[0]->setContext(this);
+	machines_[0]->setNoteOnFptr(&OmxModeForm::seqNoteOnForwarder);
+	machines_[0]->setNoteOffFptr(&OmxModeForm::seqNoteOffForwarder);
+
+
 
 	// char foo[sizeof(OmxModeForm)]
 }
@@ -200,6 +209,9 @@ void OmxModeForm::setMachineTo(uint8_t machineIndex, FormMachineInterface *ptr)
 	undoBuffer_ = machines_[machineIndex];
 
 	machines_[machineIndex] = ptr;
+	machines_[machineIndex]->setContext(this);
+	machines_[machineIndex]->setNoteOnFptr(&OmxModeForm::seqNoteOnForwarder);
+	machines_[machineIndex]->setNoteOffFptr(&OmxModeForm::seqNoteOffForwarder);
 }
 
 void OmxModeForm::updateShortcutMode()
@@ -566,12 +578,13 @@ void OmxModeForm::onKeyUpdate(OMXKeypadEvent e)
 			{
 				if (thisKey == 1)
 				{
-					params.decrementParam();
-					omxDisp.displayMessage("PLAY");
+					togglePlayback();
+					// params.decrementParam();
+					omxDisp.displayMessage(omxFormGlobal.isPlaying ? "PLAY" : "STOP");
 				}
 				else if (thisKey == 2)
 				{
-					params.incrementParam();
+					// params.incrementParam();
 					omxDisp.displayMessage("RESET");
 				}
 				keyConsumed = true;
@@ -1090,6 +1103,20 @@ void OmxModeForm::SetScale(MusicScales *scale)
 // 	}
 // }
 
+void OmxModeForm::seqNoteOn(MidiNoteGroup noteGroup, uint8_t midifx)
+{
+	Serial.println("seqNoteOn: " + String(noteGroup.noteNumber));
+	onNotePostFX(noteGroup);
+}
+
+// Called via doNoteOnForwarder
+void OmxModeForm::seqNoteOff(MidiNoteGroup noteGroup, uint8_t midifx)
+{
+	Serial.println("seqNoteOff: " + String(noteGroup.noteNumber));
+
+	onNotePostFX(noteGroup);
+}
+
 // Called via doNoteOnForwarder
 void OmxModeForm::doNoteOn(uint8_t keyIndex)
 {
@@ -1147,7 +1174,7 @@ void OmxModeForm::onNotePostFX(MidiNoteGroup note)
 {
 	if (note.noteOff)
 	{
-		// Serial.println("OmxModeForm::onNotePostFX noteOff: " + String(note.noteNumber));
+		Serial.println("OmxModeForm::onNotePostFX noteOff: " + String(note.noteNumber));
 
 		if (note.sendMidi)
 		{
@@ -1175,7 +1202,7 @@ void OmxModeForm::onNotePostFX(MidiNoteGroup note)
 		}
 		else
 		{
-			// Serial.println("OmxModeForm::onNotePostFX noteOn: " + String(note.noteNumber));
+			Serial.println("OmxModeForm::onNotePostFX noteOn: " + String(note.noteNumber));
 
 			if (note.sendMidi)
 			{
@@ -1205,6 +1232,16 @@ void OmxModeForm::onPendingNoteOff(int note, int channel)
 	for (uint8_t i = 0; i < NUM_MIDIFX_GROUPS; i++)
 	{
 		subModeMidiFx[i].onPendingNoteOff(note, channel);
+	}
+}
+
+void OmxModeForm::togglePlayback()
+{
+	omxFormGlobal.isPlaying = !omxFormGlobal.isPlaying;
+
+	for(auto m : machines_)
+	{
+		m->playBackStateChanged(omxFormGlobal.isPlaying);
 	}
 }
 
