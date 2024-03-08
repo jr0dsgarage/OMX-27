@@ -15,7 +15,7 @@ namespace FormOmni
         FormMachineType getType() { return FORMMACH_OMNI; }
         FormMachineInterface *getClone() override;
 
-        bool doesConsumePots() override { return true; }
+        bool doesConsumePots() override;
         bool doesConsumeDisplay() override;
         bool doesConsumeKeys() override; 
         bool doesConsumeLEDs() override; 
@@ -40,8 +40,7 @@ namespace FormOmni
     private:
         OmniSeq seq_;
 
-        
-
+        uint8_t selStep_;
 
         void onEnabled();
         void onDisabled();
@@ -49,7 +48,11 @@ namespace FormOmni
         void onEncoderChangedSelectParam(Encoder::Update enc);
         void onEncoderChangedEditParam(Encoder::Update enc);
 
+        void onUIModeChanged(uint8_t prevMode, uint8_t newMode);
+
         Track *getTrack();
+
+        void selStep(uint8_t stepIndex); // 0-15
 
         // char foo[sizeof(Track)]
     };

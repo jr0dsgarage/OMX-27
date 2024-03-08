@@ -11,6 +11,17 @@ namespace FormOmni
         TRANPOSEMODE_COUNT
     };
 
+    enum OmniUIMode
+    {
+        OMNIUIMODE_CONFIG,      // Should be same thing as OMNIUIMODE_PARAMS
+        OMNIUIMODE_MIX,         // 
+        OMNIUIMODE_LENGTH,
+        OMNIUIMODE_TRANSPOSE,
+        OMNIUIMODE_STEP,
+        OMNIUIMODE_NOTEEDIT,
+        OMNIUIMODE_COUNT
+    };
+
     enum PlayDirection
     {
         TRACKDIRECTION_FORWARD, // Steps move forward

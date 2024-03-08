@@ -267,6 +267,30 @@ void OmxUtil::allOff()
 	}
 }
 
+int8_t OmxUtil::getNoteNumber(uint8_t keyNum, MusicScales *scale)
+{
+	if(keyNum < 1 || keyNum >= 27) return -1;
+
+	int adjnote = notes[keyNum] + (midiSettings.octave * 12); // adjust key for octave range
+
+	if (scale != nullptr)
+	{
+		if (scaleConfig.group16)
+		{
+			adjnote = scale->getGroup16Note(keyNum, midiSettings.octave);
+		}
+		else
+		{
+			if (scaleConfig.lockScale && scale->isNoteInScale(adjnote) == false)
+			{
+				adjnote = -1;
+			}
+		}
+	}
+
+    return adjnote;
+}
+
 void OmxUtil::midiNoteOff(int notenum, int channel)
 {
 	// we use the key state captured at the time we pressed the key to send the correct note off message
