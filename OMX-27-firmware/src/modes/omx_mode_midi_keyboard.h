@@ -3,12 +3,10 @@
 #include "omx_mode_interface.h"
 #include "../utils/music_scales.h"
 #include "../utils/param_manager.h"
+#include "../utils/aux_macro_manager.h"
 #include "submodes/submode_midifxgroup.h"
-#include "submodes/submode_potconfig.h"
 #include "../midifx/midifx_interface.h"
 #include "../midifx/midifx_interface.h"
-#include "../midimacro/midimacro_m8.h"
-#include "../midimacro/midimacro_norns.h"
 
 class OmxModeMidiKeyboard : public OmxModeInterface
 {
@@ -50,6 +48,7 @@ public:
 	void onDisplayUpdate() override;
 	void inMidiNoteOn(byte channel, byte note, byte velocity) override;
 	void inMidiNoteOff(byte channel, byte note, byte velocity) override;
+	void inMidiControlChange(byte channel, byte control, byte value) override;
 
 	void SetScale(MusicScales *scale);
 
@@ -62,7 +61,7 @@ private:
 	void changePage(int amt);
 	void setParam(int paramIndex);
 
-	void onKeyUpdateM8Macro(OMXKeypadEvent e);
+	// void onKeyUpdateM8Macro(OMXKeypadEvent e);
 	bool onKeyUpdateSelMidiFX(OMXKeypadEvent e);
 	bool onKeyHeldSelMidiFX(OMXKeypadEvent e);
 
@@ -71,16 +70,19 @@ private:
 	// void onEncoderChangedSelectParam(Encoder::Update enc);
 	ParamManager params;
 
-	bool macroActive_ = false;
+    AuxMacroManager auxMacroManager_;
+
+	// bool macroActive_ = false;
+	// bool mfxQuickEdit_ = false;
 
 	// SubModes
-	SubmodeInterface *activeSubmode = nullptr;
+	// SubmodeInterface *activeSubmode = nullptr;
 	// SubModeMidiFxGroup subModeMidiFx;
-	SubModePotConfig subModePotConfig_;
+	// SubModePotConfig subModePotConfig_;
 
-	void enableSubmode(SubmodeInterface *subMode);
-	void disableSubmode();
-	bool isSubmodeEnabled();
+	// void enableSubmode(SubmodeInterface *subMode);
+	// void disableSubmode();
+	// bool isSubmodeEnabled();
 
 	// // Static glue to link a pointer to a member function
 	// static void onNoteTriggeredForwarder(void *context, uint8_t euclidIndex, MidiNoteGroup note)
@@ -115,13 +117,15 @@ private:
 	void selectMidiFx(uint8_t mfxIndex, bool dispMsg);
 
 	uint8_t mfxIndex_ = 0;
+	// uint8_t quickEditMfxIndex_ = 0;
 
-	midimacro::MidiMacroNorns nornsMarco_;
-	midimacro::MidiMacroM8 m8Macro_;
+	// midimacro::MidiMacroNorns nornsMarco_;
+	// midimacro::MidiMacroM8 m8Macro_;
+	// midimacro::MidiMacroDeluge delugeMacro_;
 
-	midimacro::MidiMacroInterface *activeMacro_;
+	// midimacro::MidiMacroInterface *activeMacro_;
 
-	midimacro::MidiMacroInterface *getActiveMacro();
+	// midimacro::MidiMacroInterface *getActiveMacro();
 
 	// Static glue to link a pointer to a member function
 	static void doNoteOnForwarder(void *context, uint8_t keyIndex)
@@ -133,5 +137,10 @@ private:
 	static void doNoteOffForwarder(void *context, uint8_t keyIndex)
 	{
 		static_cast<OmxModeMidiKeyboard *>(context)->doNoteOff(keyIndex);
+	}
+
+	static void selectMidiFXForwarder(void *context, uint8_t keyIndex, bool dispMsg)
+	{
+		static_cast<OmxModeMidiKeyboard *>(context)->selectMidiFx(keyIndex, dispMsg);
 	}
 };

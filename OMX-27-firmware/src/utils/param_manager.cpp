@@ -13,6 +13,22 @@ int8_t ParamManager::addPage(uint8_t numberOfParams)
 	return newPageIndex;
 }
 
+int8_t ParamManager::addPages(uint8_t numberOfPages)
+{
+	int8_t result = -1;
+
+	for(uint8_t i = 0; i < numberOfPages; i++)
+	{
+		result = addPage(4);
+		if(result < 0)
+		{
+			return result;
+		}
+	}
+
+	return result;
+}
+
 void ParamManager::setPageEnabled(uint8_t pageIndex, bool enablePage)
 {
 	if (pageIndex < 0 || pageIndex > numberOfPages)
@@ -245,4 +261,9 @@ uint8_t ParamManager::getNumOfParamsForPage(uint8_t pageIndex)
 		return 0;
 
 	return pageConfigs[pageIndex].numberOfParams;
+}
+
+bool ParamManager::isPageAndParam(int8_t pageIndex, int8_t paramIndex)
+{
+	return getSelPage() == pageIndex && getSelParam() == paramIndex;
 }

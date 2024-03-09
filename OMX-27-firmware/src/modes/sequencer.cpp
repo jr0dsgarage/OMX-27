@@ -9,6 +9,7 @@
 #include "../hardware/omx_disp.h"
 #include "../hardware/omx_leds.h"
 #include "../utils/omx_util.h"
+#include "../utils/cvNote_util.h"
 
 // globals in main ino
 extern SequencerState sequencer;
@@ -71,6 +72,7 @@ int loopCount[NUM_SEQ_PATTERNS][NUM_STEPS] = {
 	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}};
 
+// 1 out of 1 bars, 1 out of 2 bars, 2 out of 2 bars
 const char *trigConditions[36] = {
 	"1:1",
 	"1:2", "2:2",
@@ -384,6 +386,7 @@ void changeStepType(int amount)
 	auto tempType = getSelectedStep()->stepType + amount;
 
 	// this is fucking hacky to increment the enum for stepType
+	// yes, yes it is, why? Some modulo is in order here
 	switch (tempType)
 	{
 	case 0:
@@ -555,7 +558,7 @@ void seqNoteOn(int notenum, int velocity, int patternNum)
 		// CV
 		if (sequencer.getCurrentPattern()->sendCV)
 		{
-			omxUtil.cvNoteOn(adjnote);
+			cvNoteUtil.cvNoteOn(adjnote);
 		}
 	}
 
@@ -574,7 +577,7 @@ void seqNoteOff(int notenum, int patternNum)
 		// CV off
 		if (sequencer.getCurrentPattern()->sendCV)
 		{
-			omxUtil.cvNoteOff();
+			cvNoteUtil.cvNoteOff(adjnote);
 		}
 	}
 

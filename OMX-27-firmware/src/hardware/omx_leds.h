@@ -11,6 +11,9 @@ extern Adafruit_NeoPixel strip;
 class OmxLeds
 {
 public:
+	static const int octDnColor = ORANGE;
+	static const int octUpColor = RBLUE;
+	
 	// OmxLeds() : strip(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800){};
 
 	OmxLeds(){};
@@ -21,6 +24,8 @@ public:
 
 	int getKeyColor(MusicScales *scale, int pixel);
 	void drawMidiLeds(MusicScales *scale);
+	void drawKeyboardScaleLEDs(MusicScales *scale, int rootColor, int inScaleColor, int offScaleColor);
+
 
 	// clears dirty, transmits pixel data if dirty.
 	void showLeds();
@@ -31,9 +36,13 @@ public:
 	// Blinks for numberOfBlinks then a delay
 	bool getBlinkPattern(uint8_t numberOfBlinks);
 
-	// void setPixelColor(uint16_t n, uint8_t r, uint8_t g, uint8_t b);
+    void setAllLEDS(int color);
+
+    // void setPixelColor(uint16_t n, uint8_t r, uint8_t g, uint8_t b);
 
 	void setAllLEDS(int R, int G, int B);
+
+	void drawOctaveKeys(uint8_t octaveDownKey, uint8_t octaveUpKey, int8_t octaveVal);
 
 	void setDirty();
 	bool isDirty();
@@ -63,6 +72,8 @@ private:
 
 	uint8_t blinkPatPos[10];
 	const uint8_t blinkPatternDelay_ = 2;
+
+	
 };
 
 extern OmxLeds omxLeds;
