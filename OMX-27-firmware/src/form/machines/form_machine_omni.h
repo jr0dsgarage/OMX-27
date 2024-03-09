@@ -64,6 +64,13 @@ namespace FormOmni
 
         void selStep(uint8_t stepIndex); // 0-15
 
+        Step bufferedStep_; 
+
+        // Key index is 0-15
+        void copyStep(uint8_t keyIndex);
+        void cutStep(uint8_t keyIndex);
+        void pasteStep(uint8_t keyIndex);
+
         uint8_t playingStep_;
 
         uint8_t lastTriggeredStepIndex;

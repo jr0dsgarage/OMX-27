@@ -86,6 +86,11 @@ namespace FormOmni
 
         Step()
         {
+            setToInit();
+        }
+
+        void setToInit()
+        {
             // Set defaults
             mute = 0;
             for (uint8_t i = 0; i < 6; i++)
@@ -100,7 +105,6 @@ namespace FormOmni
             condition = 0;
             accumTPat = 0;
             mfxIndex = 1;
-
             // tPatPos = 0;
         }
 
@@ -124,6 +128,7 @@ namespace FormOmni
             for (uint8_t i = 0; i < 4; i++)
                 potVals[i] = other->potVals[i];
             vel = other->vel;
+            nudge = other->nudge;
             len = other->len;
             func = other->func;
             prob = other->prob;

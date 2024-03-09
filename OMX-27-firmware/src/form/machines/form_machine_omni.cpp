@@ -195,6 +195,27 @@ namespace FormOmni
         omniNoteEditor.setSelStep(selStep_);
     }
 
+    void FormMachineOmni::copyStep(uint8_t keyIndex)
+    {
+        if(keyIndex < 0 || keyIndex >= 16) return;
+
+        auto track = getTrack();
+        bufferedStep_.CopyFrom(&track->steps[keyIndex]);
+    }
+    void FormMachineOmni::cutStep(uint8_t keyIndex)
+    {
+        if(keyIndex < 0 || keyIndex >= 16) return;
+
+        copyStep(keyIndex);
+        getTrack()->steps[keyIndex].setToInit();
+    }
+    void FormMachineOmni::pasteStep(uint8_t keyIndex)
+    {
+        if(keyIndex < 0 || keyIndex >= 16) return;
+
+        getTrack()->steps[keyIndex].CopyFrom(&bufferedStep_);
+    }
+
     MidiNoteGroup FormMachineOmni::step2NoteGroup(uint8_t noteIndex, Step *step)
     {
         MidiNoteGroup noteGroup;
@@ -785,12 +806,66 @@ namespace FormOmni
         case OMNIUIMODE_CONFIG:
         case OMNIUIMODE_MIX:
         {
-            if (e.down() && thisKey >= 11 && thisKey < 27)
+            switch (omxFormGlobal.shortcutMode)
             {
-                auto track = getTrack();
+            case FORMSHORTCUT_NONE:
+            {
+                if (thisKey >= 11 && thisKey < 27)
+                {
+                    if (e.quickClicked())
+                    {
+                        auto track = getTrack();
 
-                selStep(thisKey - 11);
-                track->steps[thisKey - 11].mute = !track->steps[thisKey - 11].mute;
+                        selStep(thisKey - 11);
+                        track->steps[thisKey - 11].mute = !track->steps[thisKey - 11].mute;
+                    }
+                    else if (e.down())
+                    {
+                        selStep(thisKey - 11);
+                    }
+                }
+            }
+            break;
+            case FORMSHORTCUT_AUX:
+                break;
+            case FORMSHORTCUT_F1:
+                // Copy Paste
+                if (e.down() && thisKey >= 11 && thisKey < 27)
+                {
+                    if (omxFormGlobal.shortcutPaste == false)
+                    {
+                        copyStep(thisKey - 11);
+                        omxFormGlobal.shortcutPaste = true;
+                    }
+                    else
+                    {
+                        pasteStep(thisKey - 11);
+                    }
+                }
+                break;
+            case FORMSHORTCUT_F2:
+                // Cut Paste
+                if (e.down() && thisKey >= 11 && thisKey < 27)
+                {
+                    if (omxFormGlobal.shortcutPaste == false)
+                    {
+                        cutStep(thisKey - 11);
+                        omxFormGlobal.shortcutPaste = true;
+                    }
+                    else
+                    {
+                        pasteStep(thisKey - 11);
+                    }
+                }
+                break;
+            case FORMSHORTCUT_F3:
+                // Set track length
+                if (e.down() && thisKey >= 11 && thisKey < 27)
+                {
+                    auto track = getTrack();
+                    track->len = thisKey - 11;
+                }
+                break;
             }
         }
         break;
@@ -803,9 +878,6 @@ namespace FormOmni
             omniNoteEditor.onKeyUpdate(e, getTrack());
             break;
         }
-
-        
-
         return false;
     }
     bool FormMachineOmni::onKeyHeldUpdate(OMXKeypadEvent e)
