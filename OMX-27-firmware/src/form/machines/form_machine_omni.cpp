@@ -355,6 +355,16 @@ namespace FormOmni
         // 0543210543210
         // 1xxxxx1xxxxx1
 
+        if(ticksTilNext16Trigger_ <= 0)
+        {
+            ticksTilNext16Trigger_ = 24;
+        }
+
+        if(ticksTilNextTriggerRate_ <= 0)
+        {
+            ticksTilNextTriggerRate_ = ticksPerStep_;
+        }
+
         // can trigger twice in once clock if note is fully nudged
         while(ticksTilNextTrigger_ <= 0)
         {
@@ -378,13 +388,16 @@ namespace FormOmni
             int nextNudgeTicks = nextNudgePerc * ticksPerStep_;
 
             // 24 + 16 + 16
-            ticksTilNextTrigger_ = ticksPerStep_ + nextNudgeTicks - nudgeTicks;
+            // ticksTilNextTrigger_ = ticksPerStep_ + nextNudgeTicks - nudgeTicks;
+            ticksTilNextTrigger_ = ticksTilNextTriggerRate_ + nextNudgeTicks;
             // ticksTilNextTrigger_ = ticksPerStep_;
 
             playingStep_ = nextStepIndex;
         }
 
         ticksTilNextTrigger_--;
+        ticksTilNext16Trigger_--;
+        ticksTilNextTriggerRate_--;
 
         // if (seqConfig.lastClockMicros >= nextStepTime_)
         // {
@@ -422,6 +435,8 @@ namespace FormOmni
         ticksPerStep_ = roundf((PPQ * 4) / (float)rate);
 
         // ticksTilNextTrigger_ = 0; // Should we reset this?
+
+        ticksTilNextTrigger_ = ticksTilNext16Trigger_;
 
     }
 

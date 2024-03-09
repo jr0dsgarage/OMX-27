@@ -69,6 +69,12 @@ namespace FormOmni
 
         int16_t ticksTilNextTrigger_;
 
+        int16_t ticksTilNext16Trigger_; // Keeps track of ticks to quantized next 16th
+
+        int16_t ticksTilNextTriggerRate_;
+
+
+
         void onRateChanged();
 
         void triggerStep(Step *step);
