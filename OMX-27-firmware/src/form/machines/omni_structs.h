@@ -104,6 +104,18 @@ namespace FormOmni
             // tPatPos = 0;
         }
 
+        bool hasNotes()
+        {
+            for(uint8_t i = 0; i < 6; i++)
+            {
+                if(notes[i] >= 0 && notes[i] <= 127)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         void CopyFrom(Step *other)
         {
             mute = other->mute;

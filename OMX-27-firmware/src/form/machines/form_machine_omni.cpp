@@ -490,7 +490,7 @@ namespace FormOmni
         // 0210876543210543210
         // 5-3, 3 + 6 - 1
 
-        uint8_t loop = 0;
+        // uint8_t loop = 0;
 
 
         triggeredNotes_.clear();
@@ -510,21 +510,27 @@ namespace FormOmni
                 break;
             }
 
-            uint8_t nextStepIndex = (playingStep_ + 1) % length;
+            int8_t directionIncrement = track->playDirection == TRACKDIRECTION_FORWARD ? 1 : -1;
+
+            uint8_t nextStepIndex = (playingStep_ + length + directionIncrement) % length;
+            // uint8_t nextStepIndex = (playingStep_ + directionIncrement) % length;
             auto nextStep = &track->steps[nextStepIndex];
 
             triggerStep(currentStep);
+            lastTriggeredStepIndex = playingStep_;
             // int currentNudgeTicks = abs(currentStep->nudge)
 
+            // Reverse the nudges when flipping directions
+            int8_t nudgeCurrent = currentStep->nudge * directionIncrement;
+            int8_t nudgeNext = nextStep->nudge * directionIncrement;
+
             // float nudgePerc = abs(currentStep->nudge) / 60.0f * (currentStep->nudge < 0 ? -1 : 1);
-            float nudgePerc = currentStep->nudge / 60.0f;
-            int nudgeTicks = nudgePerc * ticksPerStep_;
+            int nudgeTicks = (nudgeCurrent / 60.0f) * ticksPerStep_;
 
             // float nextNudgePerc = abs(nextStep->nudge) / 60.0f * (nextStep->nudge < 0 ? -1 : 1);
-            float nextNudgePerc = nextStep->nudge / 60.0f;
-            int nextNudgeTicks = nextNudgePerc * ticksPerStep_;
+            int nextNudgeTicks = (nudgeNext / 60.0f) * ticksPerStep_;
 
-            if(!onRate && nextStep->nudge == 0)
+            if(!onRate && nudgeNext == 0)
             {
                 ticksTilNextTrigger_ = ticksTilNextTriggerRate_;
             }
@@ -533,7 +539,7 @@ namespace FormOmni
                 ticksTilNextTrigger_ = ticksPerStep_ + nextNudgeTicks - nudgeTicks;
             }
 
-            if(currentStep->nudge < 0 && !onRate)
+            if(nudgeCurrent < 0 && !onRate)
             {
                 ticksTilNextTrigger_ += ticksPerStep_;
             }
@@ -578,9 +584,10 @@ namespace FormOmni
             // ticksTilNextTrigger_ = ticksTilNextTriggerRate_ + nextNudgeTicks;
             // ticksTilNextTrigger_ = ticksPerStep_;
 
-            loop++;
+            // loop++;
 
             playingStep_ = nextStepIndex;
+            omxLeds.setDirty();
         }
 
         ticksTilNextTrigger_--;
@@ -688,8 +695,15 @@ namespace FormOmni
             for (uint8_t i = 0; i < 16; i++)
             {
                 bool isInLen = i <= track->len;
-                int keyColor = (track->steps[i].mute || !isInLen) ? LEDOFF : BLUE;
+                int keyColor = (track->steps[i].mute || !isInLen) ? LEDOFF : (track->steps[i].hasNotes() ? LTBLUE : DKBLUE);
                 strip.setPixelColor(11 + i, keyColor);
+            }
+
+            if(omxFormGlobal.isPlaying)
+            {
+                uint8_t playingStepKey = lastTriggeredStepIndex % 16;
+
+                strip.setPixelColor(11 + playingStepKey, WHITE);
             }
         }
         break;
@@ -720,10 +734,19 @@ namespace FormOmni
 
         if (omxFormGlobal.shortcutMode == FORMSHORTCUT_AUX)
         {
-            if (e.down() && thisKey >= 13 && thisKey < 19)
+            if(e.down())
             {
-                changeUIMode(thisKey - 13, false);
-                return true;
+                if(thisKey == 3)
+                {
+                    auto track = getTrack();
+                    track->playDirection = track->playDirection == TRACKDIRECTION_FORWARD ? TRACKDIRECTION_REVERSE : TRACKDIRECTION_FORWARD;
+                    omxDisp.displayMessage(track->playDirection == TRACKDIRECTION_FORWARD ? ">>" : "<<");
+                }
+                else if (thisKey >= 13 && thisKey < 19)
+                {
+                    changeUIMode(thisKey - 13, false);
+                    return true;
+                }
             }
         }
 

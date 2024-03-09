@@ -591,16 +591,6 @@ void OmxModeForm::onKeyUpdate(OMXKeypadEvent e)
 				}
 				keyConsumed = true;
 			}
-			else if (thisKey == 3)
-			{
-				// changeMode(DRUMMODE_LOADKIT);
-				return;
-			}
-			else if (thisKey == 4)
-			{
-				// changeMode(DRUMMODE_SAVEKIT);
-				return;
-			}
 		}
 	}
 

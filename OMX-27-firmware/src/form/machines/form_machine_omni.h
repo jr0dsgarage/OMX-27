@@ -62,6 +62,8 @@ namespace FormOmni
 
         uint8_t playingStep_;
 
+        uint8_t lastTriggeredStepIndex;
+
         Micros nextStepTime_;
 
         Micros stepMicros_;
