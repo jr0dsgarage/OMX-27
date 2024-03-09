@@ -23,6 +23,7 @@ namespace FormOmni
         void setTest() override;
 
 	    void playBackStateChanged(bool newIsPlaying) override;
+	    void resetPlayback() override;
 
         // Standard Updates
         void onPotChanged(int potIndex, int prevValue, int newValue, int analogDelta) override;

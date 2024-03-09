@@ -157,6 +157,11 @@ namespace FormOmni
             midiFx = 0;
         }
 
+        uint8_t getLength()
+        {
+            return len + 1;
+        }
+
         bool isStepOn(uint8_t stepIndex)
         {
             if(stepIndex > len) return false;

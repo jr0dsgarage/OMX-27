@@ -127,6 +127,8 @@ private:
 
 	bool initSetup = false;
 
+	bool stopped_ = true;
+
 	// If true, encoder selects param rather than modifies value
 	// bool encoderSelect = false;
 	// void onEncoderChangedSelectParam(Encoder::Update enc);
@@ -219,6 +221,7 @@ private:
 	void onPendingNoteOff(int note, int channel);
 
 	void togglePlayback();
+	void resetPlayback();
 
 	void stopSequencers();
 

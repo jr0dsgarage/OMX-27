@@ -40,6 +40,7 @@ public:
 	virtual void setEnabled(bool newEnabled);
 
 	virtual void playBackStateChanged(bool newIsPlaying) {}
+	virtual void resetPlayback() {}
 
 	// Callbacks
 	void setContext(void *context);

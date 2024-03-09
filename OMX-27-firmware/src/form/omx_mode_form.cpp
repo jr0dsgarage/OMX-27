@@ -40,6 +40,8 @@ OmxModeForm::OmxModeForm()
 	presetManager.setDoSaveFunc(&OmxModeForm::doSaveKitForwarder);
 	presetManager.setDoLoadFunc(&OmxModeForm::doLoadKitForwarder);
 
+	stopped_ = true;
+
 	// Setup default machines
 	for (uint8_t i = 0; i < kNumMachines; i++)
 	{
@@ -582,11 +584,11 @@ void OmxModeForm::onKeyUpdate(OMXKeypadEvent e)
 				{
 					togglePlayback();
 					// params.decrementParam();
-					omxDisp.displayMessage(omxFormGlobal.isPlaying ? "PLAY" : "STOP");
+					omxDisp.displayMessage(omxFormGlobal.isPlaying ? "PLAY" : "PAUSE");
 				}
 				else if (thisKey == 2)
 				{
-					// params.incrementParam();
+					resetPlayback();
 					omxDisp.displayMessage("RESET");
 				}
 				keyConsumed = true;
@@ -1233,8 +1235,16 @@ void OmxModeForm::togglePlayback()
 
 	if(omxFormGlobal.isPlaying)
 	{
-		seqConfig.currentClockTick = 0;
-		omxUtil.startClocks();
+		if(stopped_)
+		{
+			seqConfig.currentClockTick = 0;
+			omxUtil.startClocks();
+			stopped_ = false;
+		}
+		else
+		{
+			omxUtil.resumeClocks();
+		}
 	}
 	else
 	{
@@ -1244,6 +1254,25 @@ void OmxModeForm::togglePlayback()
 	for(auto m : machines_)
 	{
 		m->playBackStateChanged(omxFormGlobal.isPlaying);
+	}
+}
+
+void OmxModeForm::resetPlayback()
+{
+	if(omxFormGlobal.isPlaying)
+	{
+		// Send midi start so external sequencers reset to start
+		omxUtil.startClocks();
+	}
+	else
+	{
+		// Means start will send a start instead of resume
+		stopped_ = true;
+	}
+
+	for(auto m : machines_)
+	{
+		m->resetPlayback();
 	}
 }
 

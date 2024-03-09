@@ -128,11 +128,12 @@ namespace FormOmni
         {
             noteOns_.clear();
 
-            nextStepTime_ = seqConfig.lastClockMicros;
-            playingStep_ = 0;
-            ticksTilNextTrigger_ = 0;
             ticksTilNext16Trigger_ = 0;
-            ticksTilNextTriggerRate_ = 0;
+            
+            // nextStepTime_ = seqConfig.lastClockMicros;
+            // playingStep_ = 0;
+            // ticksTilNextTrigger_ = 0;
+            // ticksTilNextTriggerRate_ = 0;
 
             onRateChanged();
 
@@ -147,6 +148,30 @@ namespace FormOmni
             noteOns_.clear();
         }
     }
+
+    void FormMachineOmni::resetPlayback()
+    {
+        auto track = getTrack();
+
+        // nextStepTime_ = seqConfig.lastClockMicros + ;
+        playingStep_ = track->playDirection == TRACKDIRECTION_FORWARD ? 0 : track->getLength() - 1;
+
+        if (omxFormGlobal.isPlaying)
+        {
+            ticksTilNext16Trigger_ = 0;
+            ticksTilNextTrigger_ = ticksTilNext16Trigger_;
+            ticksTilNextTriggerRate_ = ticksTilNext16Trigger_;
+        }
+        else
+        {
+            ticksTilNextTrigger_ = 0;
+            ticksTilNext16Trigger_ = 0;
+            ticksTilNextTriggerRate_ = 0;
+        }
+
+        onRateChanged();
+    }
+
 
     Track *FormMachineOmni::getTrack()
     {
