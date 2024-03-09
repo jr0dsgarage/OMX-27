@@ -782,13 +782,13 @@ namespace FormOmni
 
                 float stepLenMult = getStepLenMult(selStep->len);
 
-                if(stepLengthMult_ < 1.0f)
+                if(stepLenMult < 1.0f)
                 {
                     omxDisp.setLegend(1, "LEN", String(stepLenMult,2));
                 }
-                else if(stepLengthMult_ > 16)
+                else if(stepLenMult > 16)
                 {
-                    uint8_t bar = stepLengthMult_ / 16.0f;
+                    uint8_t bar = stepLenMult / 16.0f;
                     omxDisp.setLegend(1, "LEN", String(bar)+"br");
                 }
                 else
