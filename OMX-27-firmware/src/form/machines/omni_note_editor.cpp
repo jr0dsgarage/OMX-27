@@ -78,6 +78,8 @@ namespace FormOmni
             }
         }
 
+        strip.setPixelColor(11, DKRED);
+
         if(blinkState)
         {
             uint8_t sel16 = selStep_ % 16;
@@ -94,6 +96,16 @@ namespace FormOmni
 
         if(e.down())
         {
+            // Set rest, no notes
+            if(thisKey == 11)
+            {
+                for (uint8_t i = 0; i < 6; i++)
+                {
+                    track->steps[selStep_].notes[i] = -1;
+                }
+                return;
+            }
+
             std::vector<uint8_t> heldKeys;
 
             for(uint8_t i = 1; i < 27; i++)
