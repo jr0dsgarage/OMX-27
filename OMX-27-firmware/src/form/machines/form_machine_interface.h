@@ -60,6 +60,8 @@ public:
 
 	virtual void selectMidiFx(uint8_t mfxIndex, bool dispMsg) {};
 
+	virtual void setTest(){};
+
     // AUX + Top 1 = Play Stop
     // For Omni:
     // AUX + Top 2 = Reset

@@ -47,6 +47,8 @@ namespace FormOmni
     {
     }
 
+
+
     FormMachineInterface *FormMachineOmni::getClone()
     {
         auto clone = new FormMachineOmni();
@@ -109,6 +111,17 @@ namespace FormOmni
         return doesConsumeKeys();
     }
 
+    void FormMachineOmni::setTest()
+    {
+        auto track = getTrack();
+
+        track->len = 3;
+        track->steps[0].notes[0] = 60;
+        track->steps[1].notes[0] = 64;
+        track->steps[2].notes[0] = 67;
+        track->steps[3].notes[0] = 71;
+    }
+
     void FormMachineOmni::playBackStateChanged(bool newIsPlaying)
     {
         if(newIsPlaying)
@@ -116,6 +129,9 @@ namespace FormOmni
             nextStepTime_ = seqConfig.lastClockMicros;
             playingStep_ = 0;
             ticksTilNextTrigger_ = 0;
+            ticksTilNext16Trigger_ = 0;
+            ticksTilNextTriggerRate_ = 0;
+
             onRateChanged();
 
             // Calculate first step
@@ -155,7 +171,7 @@ namespace FormOmni
 
             if(noteNumber >= 0 && noteNumber <= 127)
             {
-                Serial.println("triggerStep: " + String(noteNumber));
+                // Serial.println("triggerStep: " + String(noteNumber));
                 MidiNoteGroup noteGroup;
                 noteGroup.channel = seq_.channel;
                 noteGroup.noteNumber = noteNumber;
@@ -360,10 +376,22 @@ namespace FormOmni
             ticksTilNext16Trigger_ = 24;
         }
 
+        bool onRate = false;
+
         if(ticksTilNextTriggerRate_ <= 0)
         {
             ticksTilNextTriggerRate_ = ticksPerStep_;
+
+            onRate = true;
         }
+
+        // 1xxxxx1xxxxx1xxxxx1xxxxx1xxxxx1xxxxx
+        // 0543210543210
+        // 1xx1xxxxxxxx1xxxxx1
+        // 0210876543210543210
+        // 5-3, 3 + 6 - 1
+
+        uint8_t loop = 0;
 
         // can trigger twice in once clock if note is fully nudged
         while(ticksTilNextTrigger_ <= 0)
@@ -372,6 +400,13 @@ namespace FormOmni
             uint8_t length = track->len + 1;
 
             auto currentStep = &track->steps[playingStep_];
+
+            // Step should be on rate, delay until on rate
+            if(currentStep->nudge == 0 && !onRate)
+            {
+                ticksTilNextTrigger_ = ticksTilNextTriggerRate_;
+                break;
+            }
 
             uint8_t nextStepIndex = (playingStep_ + 1) % length;
             auto nextStep = &track->steps[nextStepIndex];
@@ -387,10 +422,64 @@ namespace FormOmni
             float nextNudgePerc = nextStep->nudge / 60.0f;
             int nextNudgeTicks = nextNudgePerc * ticksPerStep_;
 
-            // 24 + 16 + 16
+            
+            
+
+            if(!onRate && nextStep->nudge == 0)
+            {
+                ticksTilNextTrigger_ = ticksTilNextTriggerRate_;
+            }
+            else
+            {
+                ticksTilNextTrigger_ = ticksPerStep_ + nextNudgeTicks - nudgeTicks;
+            }
+
+            if(currentStep->nudge < 0 && !onRate)
+            {
+                ticksTilNextTrigger_ += ticksPerStep_;
+            }
+
+
+            // if(currentStep->nudge >=0 && nextStep->nudge < 0)
+            // {
+            //     if (onRate)
+            //     {
+            //         ticksTilNextTrigger_ = ticksPerStep_ + nextNudgeTicks - nudgeTicks;
+            //     }
+            //     else
+            //     {
+            //         ticksTilNextTrigger_ = ticksTilNextTriggerRate_ + nextNudgeTicks;
+            //     }
+            // }
+
+
+
+
+
+
+            // if (onRate)
+            // {
+            //     ticksTilNextTrigger_ = ticksPerStep_ + nextNudgeTicks - nudgeTicks;
+            // }
+            // else
+            // {
+            //     ticksTilNextTrigger_ = ticksTilNextTriggerRate_ + nextNudgeTicks;
+            //     // if (currentStep->nudge < 0)
+            //     // {
+            //     //     ticksTilNextTrigger_ = ticksTilNextTriggerRate_ + ticksPerStep_ + nextNudgeTicks - 1;
+            //     // }
+            //     // else
+            //     // {
+            //     //     ticksTilNextTrigger_ = ticksTilNextTriggerRate_ + nextNudgeTicks;
+            //     // }
+            // }
+
+                // 24 + 16 + 16
             // ticksTilNextTrigger_ = ticksPerStep_ + nextNudgeTicks - nudgeTicks;
-            ticksTilNextTrigger_ = ticksTilNextTriggerRate_ + nextNudgeTicks;
+            // ticksTilNextTrigger_ = ticksTilNextTriggerRate_ + nextNudgeTicks;
             // ticksTilNextTrigger_ = ticksPerStep_;
+
+            loop++;
 
             playingStep_ = nextStepIndex;
         }
@@ -437,7 +526,7 @@ namespace FormOmni
         // ticksTilNextTrigger_ = 0; // Should we reset this?
 
         ticksTilNextTrigger_ = ticksTilNext16Trigger_;
-
+        ticksTilNextTriggerRate_ = ticksTilNext16Trigger_;
     }
 
     void FormMachineOmni::loopUpdate()

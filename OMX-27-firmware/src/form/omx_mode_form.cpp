@@ -49,6 +49,8 @@ OmxModeForm::OmxModeForm()
 		machines_[i]->setNoteOffFptr(&OmxModeForm::seqNoteOffForwarder);
 	}
 
+	machines_[0]->setTest();
+
 	// machines_[0]->setContext(this);
 	// machines_[0]->setNoteOnFptr(&OmxModeForm::seqNoteOnForwarder);
 	// machines_[0]->setNoteOffFptr(&OmxModeForm::seqNoteOffForwarder);
@@ -1105,7 +1107,7 @@ void OmxModeForm::SetScale(MusicScales *scale)
 
 void OmxModeForm::seqNoteOn(MidiNoteGroup noteGroup, uint8_t midifx)
 {
-	Serial.println("seqNoteOn: " + String(noteGroup.noteNumber));
+	// Serial.println("seqNoteOn: " + String(noteGroup.noteNumber));
 	onNotePostFX(noteGroup);
 }
 

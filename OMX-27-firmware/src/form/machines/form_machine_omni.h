@@ -20,6 +20,8 @@ namespace FormOmni
         bool doesConsumeKeys() override; 
         bool doesConsumeLEDs() override; 
 
+        void setTest() override;
+
 	    void playBackStateChanged(bool newIsPlaying) override;
 
         // Standard Updates
