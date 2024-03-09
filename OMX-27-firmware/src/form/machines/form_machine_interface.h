@@ -78,6 +78,7 @@ protected:
 	void (*noteOffFuncPtr)(void *, MidiNoteGroup, uint8_t);
 
 	virtual void seqNoteOn(MidiNoteGroup noteGroup, uint8_t midiFx);
+	virtual void seqNoteOff(MidiNoteGroup noteGroup, uint8_t midiFx);
 	virtual void onNoteOn(uint8_t channel, uint8_t noteNumber, uint8_t velocity, float stepLength, bool sendMidi, bool sendCV, uint32_t noteOnMicros);
 	
 

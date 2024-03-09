@@ -126,6 +126,8 @@ namespace FormOmni
     {
         if(newIsPlaying)
         {
+            noteOns_.clear();
+
             nextStepTime_ = seqConfig.lastClockMicros;
             playingStep_ = 0;
             ticksTilNextTrigger_ = 0;
@@ -135,7 +137,14 @@ namespace FormOmni
             onRateChanged();
 
             // Calculate first step
-
+        }
+        else
+        {
+            for(auto n : noteOns_)
+            {
+                seqNoteOff(n, 255);
+            }
+            noteOns_.clear();
         }
     }
 
@@ -156,6 +165,38 @@ namespace FormOmni
         omniNoteEditor.setSelStep(selStep_);
     }
 
+    MidiNoteGroup FormMachineOmni::step2NoteGroup(uint8_t noteIndex, Step *step)
+    {
+        MidiNoteGroup noteGroup;
+
+        noteGroup.channel = seq_.channel;
+
+        if(noteIndex >= 6)
+        {
+            noteGroup.noteNumber = 255;
+        }
+        else
+        {
+            noteGroup.noteNumber = step->notes[noteIndex];
+        }
+        noteGroup.velocity = step->vel;
+
+        // noteGroup.stepLength = getStepLenMult(step->len) * stepLengthMult_ * getGateMult(seq_.gate);
+
+        float lenMult = getStepLenMult(step->len);
+        if(lenMult <= 1.0f)
+        {
+            lenMult *= getGateMult(seq_.gate);
+        }
+        noteGroup.stepLength = lenMult;
+
+        noteGroup.sendMidi = (bool)seq_.sendMidi;
+        noteGroup.sendCV = (bool)seq_.sendCV;
+        noteGroup.unknownLength = true;
+
+        return noteGroup;
+    }
+
     void FormMachineOmni::triggerStep(Step *step)
     {
         if(context_ == nullptr || noteOnFuncPtr == nullptr)
@@ -163,7 +204,7 @@ namespace FormOmni
 
         if((bool)step->mute) return;
 
-        Micros now = micros();
+        // Micros now = micros();
 
         for(int8_t i = 0; i < 6; i++)
         {
@@ -172,17 +213,52 @@ namespace FormOmni
             if(noteNumber >= 0 && noteNumber <= 127)
             {
                 // Serial.println("triggerStep: " + String(noteNumber));
-                MidiNoteGroup noteGroup;
-                noteGroup.channel = seq_.channel;
-                noteGroup.noteNumber = noteNumber;
-                noteGroup.velocity = step->vel;
-                noteGroup.stepLength = 0.25f;
-                noteGroup.sendMidi = (bool)seq_.sendMidi;
-                noteGroup.sendCV = (bool)seq_.sendCV;
-                noteGroup.noteonMicros = now;
-                noteGroup.unknownLength = false;
 
-                seqNoteOn(noteGroup, 255);
+                auto noteGroup = step2NoteGroup(i, step);
+
+                bool noteTriggeredOnSameStep = false; 
+
+                // With nudge, two steps could fire at once, 
+                // If a step already triggered a note, 
+                // don't trigger same note again to avoid
+                // overlapping note ons
+                for(auto n : triggeredNotes_)
+                {
+                    if(n.noteNumber == noteNumber)
+                    {
+                        noteTriggeredOnSameStep = true;
+                        break;
+                    }
+                }
+
+                if (!noteTriggeredOnSameStep)
+                {
+                    // bool foundNoteToRemove = false;
+                    auto it = noteOns_.begin();
+                    while (it != noteOns_.end())
+                    {
+                        // remove matching note numbers
+                        if (it->noteNumber == noteNumber)
+                        {
+                            seqNoteOff(*it, 255);
+                            // `erase()` invalidates the iterator, use returned iterator
+                            it = noteOns_.erase(it);
+                            // foundNoteToRemove = true;
+                        }
+                        else
+                        {
+                            ++it;
+                        }
+                    }
+                }
+
+                if(!noteTriggeredOnSameStep && noteOns_.size() < 16)
+                {
+                    noteGroup.noteonMicros = seqConfig.lastClockMicros;
+                    seqNoteOn(noteGroup, 255);
+                    triggeredNotes_.push_back(noteGroup);
+                    noteOns_.push_back(noteGroup);
+                }
             }
         }
     }
@@ -234,6 +310,12 @@ namespace FormOmni
                 {
                     auto selStep = getSelStep();
                     selStep->nudge = constrain(selStep->nudge + amtSlow, -60, 60);
+                }
+                break;
+                case 1:
+                {
+                    auto selStep = getSelStep();
+                    selStep->len = constrain(selStep->len + amtSlow, 0, 31);
                 }
                 break;
                 }
@@ -350,6 +432,23 @@ namespace FormOmni
     {
         if(omxFormGlobal.isPlaying == false) return;
 
+        // Send note offs
+        auto it = noteOns_.begin();
+        while (it != noteOns_.end())
+        {
+            Micros noteOffMicros = it->noteonMicros + (stepMicros_ * it->stepLength);
+            // remove matching note numbers
+            if (seqConfig.lastClockMicros >= noteOffMicros)
+            {
+                seqNoteOff(*it, 255);
+                it = noteOns_.erase(it);
+            }
+            else
+            {
+                ++it;
+            }
+        }
+
         // currentClockTick goes up to 1 bar, 96 * 4 = 384
 
         // ticksPerStep_
@@ -393,6 +492,9 @@ namespace FormOmni
 
         uint8_t loop = 0;
 
+
+        triggeredNotes_.clear();
+
         // can trigger twice in once clock if note is fully nudged
         while(ticksTilNextTrigger_ <= 0)
         {
@@ -421,9 +523,6 @@ namespace FormOmni
             // float nextNudgePerc = abs(nextStep->nudge) / 60.0f * (nextStep->nudge < 0 ? -1 : 1);
             float nextNudgePerc = nextStep->nudge / 60.0f;
             int nextNudgeTicks = nextNudgePerc * ticksPerStep_;
-
-            
-            
 
             if(!onRate && nextStep->nudge == 0)
             {
@@ -527,6 +626,38 @@ namespace FormOmni
 
         ticksTilNextTrigger_ = ticksTilNext16Trigger_;
         ticksTilNextTriggerRate_ = ticksTilNext16Trigger_;
+
+        stepLengthMult_ = 16.0f / rate;
+
+        stepMicros_ = clockConfig.step_micros * 16 / rate;
+    }
+
+    float FormMachineOmni::getStepLenMult(uint8_t len)
+    {
+        float lenMult = 1.0f;
+
+        switch (len)
+        {
+        case 0:
+            lenMult = 0.25f;
+            break;
+        case 1:
+            lenMult = 0.5f;
+            break;
+        case 2:
+            lenMult = 0.75f;
+            break;
+        default:
+            lenMult = len - 2;
+            break;
+        }
+
+        return lenMult;
+    }
+
+    float FormMachineOmni::getGateMult(uint8_t gate)
+    {
+        return max(gate / 100.f * 2, 0.05f);
     }
 
     void FormMachineOmni::loopUpdate()
@@ -636,7 +767,7 @@ namespace FormOmni
 
                 int8_t nudgePerc = (selStep->nudge / 60.0f) * 100;
                 omxDisp.setLegend(0, "NUDG", nudgePerc);
-
+                omxDisp.setLegend(1, "LEN", String(getStepLenMult(selStep->len),2));
             }
             break;
             case OMNIPAGE_1: // Velocity, Channel, Rate, Gate
@@ -645,7 +776,8 @@ namespace FormOmni
                 omxDisp.setLegend(0, "LEN", track->len + 1);
                 omxDisp.setLegend(1, "CHAN", seq_.channel + 1);
                 omxDisp.setLegend(2, "RATE", "1/" + String(kSeqRates[seq_.rate]));
-                omxDisp.setLegend(3, "GATE", seq_.gate);
+                uint8_t gateMult = getGateMult(seq_.gate) * 100;
+                omxDisp.setLegend(3, "GATE", gateMult);
             }
             break;
             case OMNIPAGE_2: // Transpose, TransposeMode

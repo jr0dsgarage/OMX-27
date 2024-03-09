@@ -60,10 +60,11 @@ namespace FormOmni
 
         void selStep(uint8_t stepIndex); // 0-15
 
-
         uint8_t playingStep_;
 
         Micros nextStepTime_;
+
+        Micros stepMicros_;
 
         uint16_t ticksPerStep_;
 
@@ -75,10 +76,18 @@ namespace FormOmni
 
         int16_t ticksTilNextTriggerRate_;
 
+        float stepLengthMult_ = 1.0f; // 1 is a 16th note, 0.5 a 32nd note length, recalculated with the rate
 
+        std::vector<MidiNoteGroup> triggeredNotes_;
+
+        std::vector<MidiNoteGroup> noteOns_;
 
         void onRateChanged();
 
+        float getStepLenMult(uint8_t len);
+        float getGateMult(uint8_t gate);
+
+        MidiNoteGroup step2NoteGroup(uint8_t noteIndex, Step *step);
         void triggerStep(Step *step);
 
         // char foo[sizeof(Track)]

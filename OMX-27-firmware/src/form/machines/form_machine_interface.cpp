@@ -59,6 +59,16 @@ void FormMachineInterface::seqNoteOn(MidiNoteGroup noteGroup, uint8_t midiFx)
 	noteOnFuncPtr(context_, noteGroup, midiFx);
 }
 
+void FormMachineInterface::seqNoteOff(MidiNoteGroup noteGroup, uint8_t midiFx)
+{
+	if (context_ == nullptr || noteOffFuncPtr == nullptr)
+		return;
+
+	noteGroup.noteOff = true;
+
+	noteOffFuncPtr(context_, noteGroup, midiFx);
+}
+
 void FormMachineInterface::onNoteOn(uint8_t channel, uint8_t noteNumber, uint8_t velocity, float stepLength, bool sendMidi, bool sendCV, uint32_t noteOnMicros)
 {
 	if (context_ == nullptr || noteOnFuncPtr == nullptr)

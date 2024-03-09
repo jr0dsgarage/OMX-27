@@ -1114,7 +1114,7 @@ void OmxModeForm::seqNoteOn(MidiNoteGroup noteGroup, uint8_t midifx)
 // Called via doNoteOnForwarder
 void OmxModeForm::seqNoteOff(MidiNoteGroup noteGroup, uint8_t midifx)
 {
-	Serial.println("seqNoteOff: " + String(noteGroup.noteNumber));
+	// Serial.println("seqNoteOff: " + String(noteGroup.noteNumber));
 
 	onNotePostFX(noteGroup);
 }
@@ -1176,7 +1176,7 @@ void OmxModeForm::onNotePostFX(MidiNoteGroup note)
 {
 	if (note.noteOff)
 	{
-		Serial.println("OmxModeForm::onNotePostFX noteOff: " + String(note.noteNumber));
+		// Serial.println("OmxModeForm::onNotePostFX noteOff: " + String(note.noteNumber));
 
 		if (note.sendMidi)
 		{
@@ -1204,7 +1204,7 @@ void OmxModeForm::onNotePostFX(MidiNoteGroup note)
 		}
 		else
 		{
-			Serial.println("OmxModeForm::onNotePostFX noteOn: " + String(note.noteNumber));
+			// Serial.println("OmxModeForm::onNotePostFX noteOn: " + String(note.noteNumber));
 
 			if (note.sendMidi)
 			{
@@ -1244,6 +1244,11 @@ void OmxModeForm::togglePlayback()
 	if(omxFormGlobal.isPlaying)
 	{
 		seqConfig.currentClockTick = 0;
+		omxUtil.startClocks();
+	}
+	else
+	{
+		omxUtil.stopClocks();
 	}
 
 	for(auto m : machines_)
