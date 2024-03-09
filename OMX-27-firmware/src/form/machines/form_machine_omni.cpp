@@ -111,6 +111,11 @@ namespace FormOmni
         return doesConsumeKeys();
     }
 
+    const char *FormMachineOmni::getF3shortcutName()
+    {
+        return "LENGTH";
+    }
+
     void FormMachineOmni::setTest()
     {
         auto track = getTrack();

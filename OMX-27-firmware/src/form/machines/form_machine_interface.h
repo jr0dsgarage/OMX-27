@@ -36,6 +36,8 @@ public:
 	virtual bool doesConsumeKeys() {return false; }
 	virtual bool doesConsumeLEDs() {return false; }
 
+	virtual const char* getF3shortcutName() {return ""; }
+
     // Setters
 	virtual void setEnabled(bool newEnabled);
 

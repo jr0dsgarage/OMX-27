@@ -10,7 +10,7 @@ enum ShortCutMode
 	FORMSHORTCUT_AUX,  // Aux shortcut held
 	FORMSHORTCUT_F1,   // Top key 1 held
 	FORMSHORTCUT_F2,   // Top key 2 held
-	FORMSHORTCUT_F3	   // Top key 1 & 2 held
+	FORMSHORTCUT_F3,   // Top key 1 & 2 held
 };
 
 enum FormMode
@@ -29,6 +29,12 @@ class OmxFormGlobalSettings
 public:
 bool encoderSelect = false;
 bool isPlaying = false;
+
+// Set to true for F1 Copy and F2 Cut shortcuts once something is added to buffer
+bool shortcutPaste = false;
+
+// If true reset will happen on next quantization step
+bool quantizeReset = false;
 
 MusicScales *musicScale;
 

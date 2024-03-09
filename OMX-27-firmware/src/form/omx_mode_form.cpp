@@ -221,22 +221,22 @@ void OmxModeForm::setMachineTo(uint8_t machineIndex, FormMachineInterface *ptr)
 void OmxModeForm::updateShortcutMode()
 {
 	uint8_t prevMode = omxFormGlobal.shortcutMode;
-
-	if (midiSettings.keyState[0])
-	{
-		omxFormGlobal.shortcutMode = FORMSHORTCUT_AUX;
-	}
-	else if (midiSettings.keyState[1] && midiSettings.keyState[2])
+	
+	if (omxFormGlobal.shortcutMode != FORMSHORTCUT_AUX && midiSettings.keyState[1] && midiSettings.keyState[2])
 	{
 		omxFormGlobal.shortcutMode = FORMSHORTCUT_F3;
 	}
-	else if (midiSettings.keyState[1])
+	else if (omxFormGlobal.shortcutMode != FORMSHORTCUT_AUX && midiSettings.keyState[1])
 	{
 		omxFormGlobal.shortcutMode = FORMSHORTCUT_F1;
 	}
-	else if (midiSettings.keyState[2])
+	else if (omxFormGlobal.shortcutMode != FORMSHORTCUT_AUX && midiSettings.keyState[2])
 	{
 		omxFormGlobal.shortcutMode = FORMSHORTCUT_F2;
+	}
+	else if (midiSettings.keyState[0])
+	{
+		omxFormGlobal.shortcutMode = FORMSHORTCUT_AUX;
 	}
 	else
 	{
@@ -245,6 +245,8 @@ void OmxModeForm::updateShortcutMode()
 
 	if(prevMode != omxFormGlobal.shortcutMode)
 	{
+		omxFormGlobal.shortcutPaste = false;
+
 		omxDisp.setDirty();
 		omxLeds.setDirty();
 	}
@@ -555,13 +557,27 @@ void OmxModeForm::onKeyUpdate(OMXKeypadEvent e)
 	if (onKeyUpdateSelMidiFX(e))
 		return;
 
+	// if (omxFormGlobal.shortcutMode == FORMSHORTCUT_NONE || omxFormGlobal.shortcutMode == FORMSHORTCUT_AUX)
+	// {
+	// 	if (auxMacroManager_.onKeyUpdate(e))
+	// 		return; // Key consumed by macro
+
+	// 	if (onKeyUpdateSelMidiFX(e))
+	// 		return;
+	// }
+
 	int thisKey = e.key();
 
 	// AUX KEY
-	if (thisKey == 0)
+
+	// Don't go into aux mode if shortcuts F1 or F2 are being used
+	if (omxFormGlobal.shortcutMode == FORMSHORTCUT_NONE || omxFormGlobal.shortcutMode == FORMSHORTCUT_AUX)
 	{
-		midiSettings.midiAUX = e.down();
-		return;
+		if (thisKey == 0)
+		{
+			midiSettings.midiAUX = e.down();
+			return;
+		}
 	}
 
 	bool keyConsumed = false;
@@ -594,6 +610,19 @@ void OmxModeForm::onKeyUpdate(OMXKeypadEvent e)
 				keyConsumed = true;
 			}
 		}
+		else if(e.held())
+		{
+			if (auxMacroManager_.isMFXQuickEditEnabled() == false && thisKey == 1 ) // Change Param selection
+			{
+				// Shortcut to do a reset after pausing
+				if(omxFormGlobal.isPlaying == false)
+				{
+					resetPlayback();
+					omxDisp.displayMessage("STOP");
+					keyConsumed = true;
+				}
+			}
+		}
 	}
 
 	auto selMachine = machines_[selectedMachine_];
@@ -622,36 +651,66 @@ void OmxModeForm::onKeyUpdate(OMXKeypadEvent e)
 		{
 			if (!e.held() && e.down())
 			{
-				if (thisKey >= 3 && thisKey < 11)
+				if(thisKey == 0)
 				{
-					copyMachineAt(thisKey - 3);
-					keyConsumed = true;
+					omxDisp.displayMessage("AUX F1");
+				}
+				else if (thisKey >= 3 && thisKey < 11)
+				{
+					if (omxFormGlobal.shortcutPaste == false)
+					{
+						copyMachineAt(thisKey - 3);
+						omxFormGlobal.shortcutPaste = true;
+						keyConsumed = true;
+					}
+					else
+					{
+						pasteMachineTo(thisKey - 3);
+						keyConsumed = true;
+					}
 				}
 			}
 		}
 		break;
-		case FORMSHORTCUT_F2: // Paste
+		case FORMSHORTCUT_F2: // Cut
 		{
 			if (!e.held() && e.down())
 			{
-				if (thisKey >= 3 && thisKey < 11)
+				if (thisKey == 0)
 				{
-					pasteMachineTo(thisKey - 3);
-					keyConsumed = true;
+					omxDisp.displayMessage("AUX F2");
+				}
+				else if (thisKey >= 3 && thisKey < 11)
+				{
+					if (omxFormGlobal.shortcutPaste == false)
+					{
+						cutMachineAt(thisKey - 3);
+						omxFormGlobal.shortcutPaste = true;
+						keyConsumed = true;
+					}
+					else
+					{
+						pasteMachineTo(thisKey - 3);
+						keyConsumed = true;
+					}
 				}
 			}
 		}
 		break;
-		case FORMSHORTCUT_F3: // Cut
+		case FORMSHORTCUT_F3: // Sequencer shortcut
 		{
-			if (!e.held() && e.down())
+			if (thisKey == 0)
 			{
-				if (thisKey >= 3 && thisKey < 11)
-				{
-					cutMachineAt(thisKey - 3);
-					keyConsumed = true;
-				}
+				omxDisp.displayMessage("AUX F3");
 			}
+			// if (!e.held() && e.down())
+			// {
+			// 	if (thisKey >= 3 && thisKey < 11)
+			// 	{
+			// 		cutMachineAt(thisKey - 3);
+			// 		keyConsumed = true;
+			// 	}
+			// }
 		}
 		break;
 		default:
@@ -844,15 +903,15 @@ void OmxModeForm::onDisplayUpdate()
 	// 	// tempString = "Aux";
 	// 	break;
 	case FORMSHORTCUT_F1:
-		tempString = "Copy";
+		tempString = omxFormGlobal.shortcutPaste ? "Paste" : "Copy";
 		dispLabel = true;
 		break;
 	case FORMSHORTCUT_F2:
-		tempString = "Paste";
+		tempString = omxFormGlobal.shortcutPaste ? "Paste" : "Cut";
 		dispLabel = true;
 		break;
 	case FORMSHORTCUT_F3:
-		tempString = "Cut";
+		tempString = selMachine->getF3shortcutName();
 		dispLabel = true;
 		break;
 	default:

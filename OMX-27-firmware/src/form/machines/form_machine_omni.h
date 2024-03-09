@@ -20,6 +20,9 @@ namespace FormOmni
         bool doesConsumeKeys() override; 
         bool doesConsumeLEDs() override; 
 
+	    const char* getF3shortcutName() override;
+
+
         void setTest() override;
 
 	    void playBackStateChanged(bool newIsPlaying) override;
