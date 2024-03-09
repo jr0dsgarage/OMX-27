@@ -62,7 +62,13 @@ namespace FormOmni
 
         Micros nextStepTime_;
 
-        float ticksPerStep_;
+        uint16_t ticksPerStep_;
+
+        uint16_t omniTick_;
+
+        int16_t ticksTilNextTrigger_;
+
+        void onRateChanged();
 
         void triggerStep(Step *step);
 

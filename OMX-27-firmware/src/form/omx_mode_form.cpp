@@ -44,14 +44,14 @@ OmxModeForm::OmxModeForm()
 	for (uint8_t i = 0; i < kNumMachines; i++)
 	{
 		machines_[i] = new FormOmni::FormMachineOmni();
-		// machines_[i]->setContext(this);
-		// machines_[i]->setNoteOnFptr(&OmxModeForm::seqNoteOnForwarder);
-		// machines_[i]->setNoteOffFptr(&OmxModeForm::seqNoteOffForwarder);
+		machines_[i]->setContext(this);
+		machines_[i]->setNoteOnFptr(&OmxModeForm::seqNoteOnForwarder);
+		machines_[i]->setNoteOffFptr(&OmxModeForm::seqNoteOffForwarder);
 	}
 
-	machines_[0]->setContext(this);
-	machines_[0]->setNoteOnFptr(&OmxModeForm::seqNoteOnForwarder);
-	machines_[0]->setNoteOffFptr(&OmxModeForm::seqNoteOffForwarder);
+	// machines_[0]->setContext(this);
+	// machines_[0]->setNoteOnFptr(&OmxModeForm::seqNoteOnForwarder);
+	// machines_[0]->setNoteOffFptr(&OmxModeForm::seqNoteOffForwarder);
 
 
 
@@ -1238,6 +1238,11 @@ void OmxModeForm::onPendingNoteOff(int note, int channel)
 void OmxModeForm::togglePlayback()
 {
 	omxFormGlobal.isPlaying = !omxFormGlobal.isPlaying;
+
+	if(omxFormGlobal.isPlaying)
+	{
+		seqConfig.currentClockTick = 0;
+	}
 
 	for(auto m : machines_)
 	{

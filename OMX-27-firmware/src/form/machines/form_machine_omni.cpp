@@ -40,6 +40,8 @@ namespace FormOmni
         {
             trackParams_.addPages(OMNIPAGE_COUNT);
         }
+
+        onRateChanged();
     }
     FormMachineOmni::~FormMachineOmni()
     {
@@ -113,6 +115,8 @@ namespace FormOmni
         {
             nextStepTime_ = seqConfig.lastClockMicros;
             playingStep_ = 0;
+            ticksTilNextTrigger_ = 0;
+            onRateChanged();
         }
     }
 
@@ -133,6 +137,8 @@ namespace FormOmni
         if(context_ == nullptr || noteOnFuncPtr == nullptr)
             return;
 
+        Micros now = micros();
+
         for(int8_t i = 0; i < 6; i++)
         {
             int8_t noteNumber = step->notes[i];
@@ -144,10 +150,10 @@ namespace FormOmni
                 noteGroup.channel = seq_.channel;
                 noteGroup.noteNumber = noteNumber;
                 noteGroup.velocity = step->vel;
-                noteGroup.stepLength = 1;
-                noteGroup.sendMidi = seq_.sendMidi;
-                noteGroup.sendCV = seq_.sendCV;
-                noteGroup.noteonMicros = seqConfig.lastClockMicros;
+                noteGroup.stepLength = 0.25f;
+                noteGroup.sendMidi = (bool)seq_.sendMidi;
+                noteGroup.sendCV = (bool)seq_.sendCV;
+                noteGroup.noteonMicros = now;
                 noteGroup.unknownLength = false;
 
                 seqNoteOn(noteGroup, 255);
@@ -191,11 +197,17 @@ namespace FormOmni
                 switch (selParam)
                 {
                 case 0:
-                    break;
+                {
+                    auto track = getTrack();
+                    track->len = constrain(track->len + amtSlow, 0, 63);
+                }
+                break;
                 case 1:
                     seq_.channel = constrain(seq_.channel + amtSlow, 0, 15);
                     break;
                 case 2:
+                    seq_.rate = constrain(seq_.rate + amtSlow, 0, kNumSeqRates - 1);
+                    onRateChanged();
                     break;
                 case 3:
                     seq_.gate = constrain(seq_.gate + amtFast, 0, 100);
@@ -289,27 +301,63 @@ namespace FormOmni
     {
         if(omxFormGlobal.isPlaying == false) return;
 
-        if (seqConfig.lastClockMicros >= nextStepTime_)
-        {
-            // 96 ppq
-            int8_t rate = kSeqRates[seq_.rate];
+        
 
+        // currentClockTick goes up to 1 bar, 96 * 4 = 384
+
+        // ticksPerStep_
+        // 1 = 384, 3 = 192, 4 = 128, 4 = 96, 5 = 76.8, 6 = 64, 8 = 48, 10 = 38.4, 12 = 32, 16 = 24, 20 = 19.2, 24 = 16, 32 = 12, 40 = 9.6, 48 = 8, 64 = 6
+
+        // int16_t maxTick = PPQ * 4; // 384
+
+        // int16_t maxTick = ticksPerStep_ * 16; // 384
+        // 
+
+        // if(seqConfig.currentClockTick % 384 == 0)
+        // {
+
+        //     omniTick_++;
+        // }
+
+        // 1xxxxx1xxxxx1xxxxx1xxxxx1xxxxx1xxxxx1xxxxx
+
+        // 0543210543210
+        // 1xxxxx1xxxxx1
+
+        if(ticksTilNextTrigger_ <= 0)
+        {
             auto track = getTrack();
 
+            auto currentStep = &track->steps[playingStep_];
+            triggerStep(currentStep);
+
+            ticksTilNextTrigger_ = ticksPerStep_;
+
             uint8_t length = track->len + 1;
-
-            ticksPerStep_ = (PPQ * 4) / (float)rate;
-
-            // uint8_t nextStepIndex = playingStep_ + 1 % length;
-
-            auto playingStep = &track->steps[playingStep_];
-            // auto nextStep = &track->steps[nextStepIndex];
-
-            triggerStep(playingStep);
-
-            nextStepTime_ = nextStepTime_ + clockConfig.ppqInterval * ticksPerStep_;
             playingStep_ = (playingStep_ + 1) % length;
         }
+
+        ticksTilNextTrigger_--;
+
+        // if (seqConfig.lastClockMicros >= nextStepTime_)
+        // {
+        //     // 96 ppq
+
+        //     auto track = getTrack();
+
+        //     uint8_t length = track->len + 1;
+
+
+        //     // uint8_t nextStepIndex = playingStep_ + 1 % length;
+
+        //     auto playingStep = &track->steps[playingStep_];
+        //     // auto nextStep = &track->steps[nextStepIndex];
+
+        //     triggerStep(playingStep);
+
+        //     nextStepTime_ = nextStepTime_ + clockConfig.ppqInterval * ticksPerStep_;
+        //     playingStep_ = (playingStep_ + 1) % length;
+        // }
 
         // seqConfig.lastClockMicros = ;
         // if(seqConfig.currentClockTick % 96 == 0)
@@ -319,6 +367,15 @@ namespace FormOmni
         // seqConfig.currentClockTick
 
         // clockConfig.ppqInterval
+    }
+
+    void FormMachineOmni::onRateChanged()
+    {
+        int8_t rate = kSeqRates[seq_.rate];
+        ticksPerStep_ = roundf((PPQ * 4) / (float)rate);
+
+        // ticksTilNextTrigger_ = 0; // Should we reset this?
+
     }
 
     void FormMachineOmni::loopUpdate()
@@ -427,9 +484,10 @@ namespace FormOmni
             break;
             case OMNIPAGE_1: // Velocity, Channel, Rate, Gate
             {
-                omxDisp.setLegend(0, "VEL", 100);
+                auto track = getTrack();
+                omxDisp.setLegend(0, "LEN", track->len + 1);
                 omxDisp.setLegend(1, "CHAN", seq_.channel + 1);
-                omxDisp.setLegend(2, "RATE", 1);
+                omxDisp.setLegend(2, "RATE", "1/" + String(kSeqRates[seq_.rate]));
                 omxDisp.setLegend(3, "GATE", seq_.gate);
             }
             break;
