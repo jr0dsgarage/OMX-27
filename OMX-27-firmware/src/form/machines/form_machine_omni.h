@@ -54,6 +54,7 @@ namespace FormOmni
         void onUIModeChanged(uint8_t prevMode, uint8_t newMode);
 
         Track *getTrack();
+        Step *getSelStep();
 
         void selStep(uint8_t stepIndex); // 0-15
 

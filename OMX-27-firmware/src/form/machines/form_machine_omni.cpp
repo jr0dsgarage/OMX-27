@@ -117,12 +117,20 @@ namespace FormOmni
             playingStep_ = 0;
             ticksTilNextTrigger_ = 0;
             onRateChanged();
+
+            // Calculate first step
+
         }
     }
 
     Track *FormMachineOmni::getTrack()
     {
         return &seq_.tracks[0];
+    }
+
+    Step *FormMachineOmni::getSelStep()
+    {
+        return &getTrack()->steps[selStep_];
     }
 
     void FormMachineOmni::selStep(uint8_t stepIndex)
@@ -136,6 +144,8 @@ namespace FormOmni
     {
         if(context_ == nullptr || noteOnFuncPtr == nullptr)
             return;
+
+        if((bool)step->mute) return;
 
         Micros now = micros();
 
@@ -170,7 +180,19 @@ namespace FormOmni
 
     void FormMachineOmni::onEncoderChangedSelectParam(Encoder::Update enc)
     {
-        trackParams_.changeParam(enc.dir());
+        switch (omniUiMode_)
+        {
+        case OMNIUIMODE_CONFIG:
+        case OMNIUIMODE_MIX:
+        case OMNIUIMODE_LENGTH:
+            trackParams_.changeParam(enc.dir());
+            break;
+        case OMNIUIMODE_TRANSPOSE:
+        case OMNIUIMODE_STEP:
+        case OMNIUIMODE_NOTEEDIT:
+            break;
+        }
+        
         omxDisp.setDirty();
     }
     void FormMachineOmni::onEncoderChangedEditParam(Encoder::Update enc)
@@ -190,6 +212,15 @@ namespace FormOmni
             {
             case OMNIPAGE_GBL1: // BPM
             {
+                switch (selParam)
+                {
+                case 0:
+                {
+                    auto selStep = getSelStep();
+                    selStep->nudge = constrain(selStep->nudge + amtSlow, -60, 60);
+                }
+                break;
+                }
             }
             break;
             case OMNIPAGE_1: // Velocity, Channel, Rate, Gate
@@ -273,6 +304,8 @@ namespace FormOmni
             omniUiMode_ = newMode;
             onUIModeChanged(prevMode, newMode);
 
+            encoderSelect_ = true;
+
             if (!silent)
             {
                 omxDisp.displayMessage(kUIModeMsg[omniUiMode_]);
@@ -301,8 +334,6 @@ namespace FormOmni
     {
         if(omxFormGlobal.isPlaying == false) return;
 
-        
-
         // currentClockTick goes up to 1 bar, 96 * 4 = 384
 
         // ticksPerStep_
@@ -324,17 +355,33 @@ namespace FormOmni
         // 0543210543210
         // 1xxxxx1xxxxx1
 
-        if(ticksTilNextTrigger_ <= 0)
+        // can trigger twice in once clock if note is fully nudged
+        while(ticksTilNextTrigger_ <= 0)
         {
             auto track = getTrack();
+            uint8_t length = track->len + 1;
 
             auto currentStep = &track->steps[playingStep_];
+
+            uint8_t nextStepIndex = (playingStep_ + 1) % length;
+            auto nextStep = &track->steps[nextStepIndex];
+
             triggerStep(currentStep);
+            // int currentNudgeTicks = abs(currentStep->nudge)
 
-            ticksTilNextTrigger_ = ticksPerStep_;
+            // float nudgePerc = abs(currentStep->nudge) / 60.0f * (currentStep->nudge < 0 ? -1 : 1);
+            float nudgePerc = currentStep->nudge / 60.0f;
+            int nudgeTicks = nudgePerc * ticksPerStep_;
 
-            uint8_t length = track->len + 1;
-            playingStep_ = (playingStep_ + 1) % length;
+            // float nextNudgePerc = abs(nextStep->nudge) / 60.0f * (nextStep->nudge < 0 ? -1 : 1);
+            float nextNudgePerc = nextStep->nudge / 60.0f;
+            int nextNudgeTicks = nextNudgePerc * ticksPerStep_;
+
+            // 24 + 16 + 16
+            ticksTilNextTrigger_ = ticksPerStep_ + nextNudgeTicks - nudgeTicks;
+            // ticksTilNextTrigger_ = ticksPerStep_;
+
+            playingStep_ = nextStepIndex;
         }
 
         ticksTilNextTrigger_--;
@@ -393,7 +440,8 @@ namespace FormOmni
 
             for (uint8_t i = 0; i < 16; i++)
             {
-                int keyColor = track->steps[i].mute ? LEDOFF : BLUE;
+                bool isInLen = i <= track->len;
+                int keyColor = (track->steps[i].mute || !isInLen) ? LEDOFF : BLUE;
                 strip.setPixelColor(11 + i, keyColor);
             }
         }
@@ -480,6 +528,11 @@ namespace FormOmni
             {
             case OMNIPAGE_GBL1: // BPM
             {
+                auto selStep = getSelStep();
+
+                int8_t nudgePerc = (selStep->nudge / 60.0f) * 100;
+                omxDisp.setLegend(0, "NUDG", nudgePerc);
+
             }
             break;
             case OMNIPAGE_1: // Velocity, Channel, Rate, Gate

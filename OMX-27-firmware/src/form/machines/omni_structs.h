@@ -72,7 +72,7 @@ namespace FormOmni
         int8_t notes[6];       // 0 - 127, -1 for off
         int8_t potVals[4];     // 0 -> 127, -1 for off
         uint8_t vel : 7;       // 0 - 127
-        int8_t nudge : 6;      // Nudge note back or forward. Range is  -24 to +24 pulses, 24 pulses = 1 16th note, displayed as -100% to +100%, , displ
+        int8_t nudge : 7;      // Nudge note back or forward. Range is +- 60, displayed as -100% to +100%, , displ
         uint8_t len : 5;       // [0]0.25 - 64th note, [1]0.5 - 32nd note, [2]1 - 16 steps
         uint8_t func : 5;      // StepFunc 7 or jump to specific step + 16 max 23
         uint8_t prob : 7;      // 0 - 100% Chance
@@ -93,6 +93,7 @@ namespace FormOmni
             for (uint8_t i = 0; i < 4; i++)
                 potVals[i] = -1;
             vel = 127;
+            nudge = 0;
             len = 2;
             func = 0;
             prob = 100;
