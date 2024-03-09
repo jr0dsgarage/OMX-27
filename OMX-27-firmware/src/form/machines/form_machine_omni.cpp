@@ -184,11 +184,11 @@ namespace FormOmni
         // noteGroup.stepLength = getStepLenMult(step->len) * stepLengthMult_ * getGateMult(seq_.gate);
 
         float lenMult = getStepLenMult(step->len);
-        if(lenMult <= 1.0f)
-        {
-            lenMult *= getGateMult(seq_.gate);
-        }
-        noteGroup.stepLength = lenMult;
+        // if(lenMult <= 1.0f)
+        // {
+        //     lenMult *= getGateMult(seq_.gate);
+        // }
+        noteGroup.stepLength = lenMult * getGateMult(seq_.gate);
 
         noteGroup.sendMidi = (bool)seq_.sendMidi;
         noteGroup.sendCV = (bool)seq_.sendCV;
@@ -315,7 +315,7 @@ namespace FormOmni
                 case 1:
                 {
                     auto selStep = getSelStep();
-                    selStep->len = constrain(selStep->len + amtSlow, 0, 31);
+                    selStep->len = constrain(selStep->len + amtSlow, 0, 22);
                 }
                 break;
                 }
@@ -639,16 +639,28 @@ namespace FormOmni
         switch (len)
         {
         case 0:
-            lenMult = 0.25f;
+            lenMult = 0.125f;
             break;
         case 1:
-            lenMult = 0.5f;
+            lenMult = 0.25f;
             break;
         case 2:
+            lenMult = 0.5f;
+            break;
+        case 3:
             lenMult = 0.75f;
             break;
+        case 20: // 2 bar
+            lenMult = 16 * 2;
+            break;
+        case 21:
+            lenMult = 16 * 3;
+            break;
+        case 22: // 4 bar
+            lenMult = 16 * 4;
+            break;
         default:
-            lenMult = len - 2;
+            lenMult = len - 3;
             break;
         }
 
@@ -657,7 +669,7 @@ namespace FormOmni
 
     float FormMachineOmni::getGateMult(uint8_t gate)
     {
-        return max(gate / 100.f * 2, 0.05f);
+        return max(gate / 100.f * 2, 0.01f);
     }
 
     void FormMachineOmni::loopUpdate()
@@ -767,7 +779,22 @@ namespace FormOmni
 
                 int8_t nudgePerc = (selStep->nudge / 60.0f) * 100;
                 omxDisp.setLegend(0, "NUDG", nudgePerc);
-                omxDisp.setLegend(1, "LEN", String(getStepLenMult(selStep->len),2));
+
+                float stepLenMult = getStepLenMult(selStep->len);
+
+                if(stepLengthMult_ < 1.0f)
+                {
+                    omxDisp.setLegend(1, "LEN", String(stepLenMult,2));
+                }
+                else if(stepLengthMult_ > 16)
+                {
+                    uint8_t bar = stepLengthMult_ / 16.0f;
+                    omxDisp.setLegend(1, "LEN", String(bar)+"br");
+                }
+                else
+                {
+                    omxDisp.setLegend(1, "LEN", String(stepLenMult, 0));
+                }
             }
             break;
             case OMNIPAGE_1: // Velocity, Channel, Rate, Gate

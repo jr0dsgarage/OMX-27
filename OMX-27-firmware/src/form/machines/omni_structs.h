@@ -94,7 +94,7 @@ namespace FormOmni
                 potVals[i] = -1;
             vel = 127;
             nudge = 0;
-            len = 2;
+            len = 3;
             func = 0;
             prob = 100;
             condition = 0;
