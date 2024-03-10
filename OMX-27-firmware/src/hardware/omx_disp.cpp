@@ -13,8 +13,6 @@ OmxDisp::OmxDisp()
 {
 }
 
-
-
 void OmxDisp::setup()
 {
 	initializeDisplay();
@@ -38,8 +36,7 @@ void OmxDisp::drawStartupScreen()
 	u8g2_display.setBackgroundColor(BLACK);
 	drawLoading();
 	// Display version
-    display.clearDisplay();
-    displayMessageTimed("v" + String(MAJOR_VERSION) + "." + String(MINOR_VERSION) + "." + String(POINT_VERSION), 1);
+    displayMessage("v" + String(MAJOR_VERSION) + "." + String(MINOR_VERSION) + "." + String(POINT_VERSION));
     display.display();
 }
 
