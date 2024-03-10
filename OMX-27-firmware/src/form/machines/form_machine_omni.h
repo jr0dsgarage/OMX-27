@@ -50,6 +50,9 @@ namespace FormOmni
 
         uint8_t selStep_;
 
+        uint8_t activePage_ = 0;
+        uint8_t zoomLevel_ = 0;
+
         void onEnabled();
         void onDisabled();
 
@@ -61,6 +64,7 @@ namespace FormOmni
 
         Track *getTrack();
         Step *getSelStep();
+        uint8_t key16toStep(uint8_t key16);
 
         void selStep(uint8_t stepIndex); // 0-15
 

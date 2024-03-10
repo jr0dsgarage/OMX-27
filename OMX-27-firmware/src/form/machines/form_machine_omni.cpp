@@ -30,6 +30,9 @@ namespace FormOmni
     // 1, 2, 3, 4, 8, 16, 32, 64
     const uint8_t kRateShortcuts[] = {0, 1, 2, 3, 6, 9, 12, 15};
 
+    const uint8_t kZoomMults[] = {1,2,4};
+    const uint8_t kPageMax[] = {4,2,1};
+
     // Global param management so pages are same across machines
     ParamManager trackParams_;
     ParamManager noteParams_;
@@ -192,9 +195,22 @@ namespace FormOmni
         return &getTrack()->steps[selStep_];
     }
 
+    uint8_t FormMachineOmni::key16toStep(uint8_t key16)
+    {
+        uint8_t zoomMult = kZoomMults[zoomLevel_];
+
+        uint8_t view = 16 * zoomMult;
+
+        uint8_t page = min(activePage_, kPageMax[zoomLevel_]);
+
+        uint8_t stepIndex = (view * page) + (key16 * zoomMult);
+
+        return stepIndex;
+    }
+
     void FormMachineOmni::selStep(uint8_t stepIndex)
     {
-        selStep_ = stepIndex;
+        selStep_ = key16toStep(stepIndex);
 
         omniNoteEditor.setSelStep(selStep_);
     }
@@ -203,21 +219,27 @@ namespace FormOmni
     {
         if(keyIndex < 0 || keyIndex >= 16) return;
 
+        uint8_t stepIndex = key16toStep(keyIndex);
+
         auto track = getTrack();
-        bufferedStep_.CopyFrom(&track->steps[keyIndex]);
+        bufferedStep_.CopyFrom(&track->steps[stepIndex]);
     }
     void FormMachineOmni::cutStep(uint8_t keyIndex)
     {
         if(keyIndex < 0 || keyIndex >= 16) return;
 
+        uint8_t stepIndex = key16toStep(keyIndex);
+
         copyStep(keyIndex);
-        getTrack()->steps[keyIndex].setToInit();
+        getTrack()->steps[stepIndex].setToInit();
     }
     void FormMachineOmni::pasteStep(uint8_t keyIndex)
     {
         if(keyIndex < 0 || keyIndex >= 16) return;
 
-        getTrack()->steps[keyIndex].CopyFrom(&bufferedStep_);
+        uint8_t stepIndex = key16toStep(keyIndex);
+
+        getTrack()->steps[stepIndex].CopyFrom(&bufferedStep_);
     }
 
     MidiNoteGroup FormMachineOmni::step2NoteGroup(uint8_t noteIndex, Step *step)
@@ -475,7 +497,17 @@ namespace FormOmni
     {
         // Serial.println("onPotChanged: " + String(potIndex) + " " + String(prevValue) + " " + String(newValue));
 
-        if (potIndex == 4)
+        if(potIndex == 0)
+        {
+            activePage_ = map(newValue, 0, 127, 0, kPageMax[zoomLevel_] - 1);
+            omxDisp.displayMessage("Page " + String(activePage_ + 1));
+        }
+        else if(potIndex == 1)
+        {
+            zoomLevel_ = map(newValue, 0, 127, 0, 2);
+            omxDisp.displayMessage("Zoom " + String(kZoomMults[zoomLevel_]) + "x");
+        }
+        else if (potIndex == 4)
         {
             uint8_t newUIMode = map(newValue, 0, 127, 0, OMNIUIMODE_COUNT - 1);
 
@@ -739,7 +771,6 @@ namespace FormOmni
     }
     bool FormMachineOmni::updateLEDs()
     {
-
         switch (omniUiMode_)
         {
         case OMNIUIMODE_CONFIG:
@@ -749,14 +780,18 @@ namespace FormOmni
 
             for (uint8_t i = 0; i < 16; i++)
             {
-                bool isInLen = i <= track->len;
-                int keyColor = (track->steps[i].mute || !isInLen) ? LEDOFF : (track->steps[i].hasNotes() ? LTBLUE : DKBLUE);
+                uint8_t stepIndex = key16toStep(i);
+                bool isInLen = stepIndex <= track->len;
+                auto step = &track->steps[stepIndex];
+                int keyColor = (step->mute || !isInLen) ? LEDOFF : (step->hasNotes() ? LTBLUE : DKBLUE);
                 strip.setPixelColor(11 + i, keyColor);
             }
 
             if(omxFormGlobal.isPlaying)
             {
-                uint8_t playingStepKey = lastTriggeredStepIndex % 16;
+                uint8_t playingStepKey = lastTriggeredStepIndex % (16 * kZoomMults[zoomLevel_]);
+
+                playingStepKey = map(playingStepKey, 0, 16 * kZoomMults[zoomLevel_], 0, 15);
 
                 strip.setPixelColor(11 + playingStepKey, WHITE);
             }
@@ -821,7 +856,8 @@ namespace FormOmni
                         auto track = getTrack();
 
                         selStep(thisKey - 11);
-                        track->steps[thisKey - 11].mute = !track->steps[thisKey - 11].mute;
+                        uint8_t stepIndex = key16toStep(thisKey - 11);
+                        track->steps[stepIndex].mute = !track->steps[stepIndex].mute;
                     }
                     else if (e.down())
                     {
@@ -873,7 +909,8 @@ namespace FormOmni
                 if (e.down() && thisKey >= 11 && thisKey < 27)
                 {
                     auto track = getTrack();
-                    track->len = thisKey - 11;
+                    track->len = (thisKey - 11) * kZoomMults[zoomLevel_] + (kZoomMults[zoomLevel_] - 1);
+
                 }
                 break;
             }

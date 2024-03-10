@@ -36,7 +36,7 @@
 // Pot 1 - Pickup off, Selects Page: 1 - 4
 // Pot 2 - Pickup on, Selects Zoom: 1 Bar, 2 Bar, 4 Bar, Steps faster than zoom are hidden.
 // Pot 3 - Pickup on, Cross Page: Applies changes to step on all bars if zoom level 1 bar,
-// Pot 4 - Pickup on, Sets track rate
+// Pot 4 - Pickup on, Sets track rate, maybe play mode instead since there are now F3 rate shortcuts
 
 // Pot 5 - Pickup On, default is mix. Change behaviour of keys, also on UI page
 
