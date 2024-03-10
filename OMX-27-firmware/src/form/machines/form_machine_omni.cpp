@@ -117,7 +117,7 @@ namespace FormOmni
 
     const char *FormMachineOmni::getF3shortcutName()
     {
-        return "LEN / RATE";
+        return "LEN | RATE";
     }
 
     void FormMachineOmni::setTest()
@@ -867,7 +867,8 @@ namespace FormOmni
                 if(e.down() && thisKey >= 3 && thisKey <= 10)
                 {
                     seq_.rate = kRateShortcuts[thisKey - 3];
-                    omxDisp.displayMessage("RATE 1/" + String(kSeqRates[seq_.rate]));
+                    omxDisp.displayMessage("RATE 1:" + String(kSeqRates[seq_.rate]));
+                    onRateChanged();
                 }
                 if (e.down() && thisKey >= 11 && thisKey < 27)
                 {
