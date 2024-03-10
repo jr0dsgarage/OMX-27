@@ -26,6 +26,10 @@ namespace FormOmni
 
     const char* kUIModeMsg[] = {"CONFIG", "MIX", "LENGTH", "TRANSPOSE", "STEP", "NOTE EDIT"};
 
+    // kSeqRates[] = {1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 20, 24, 32, 40, 48, 64};
+    // 1, 2, 3, 4, 8, 16, 32, 64
+    const uint8_t kRateShortcuts[] = {0, 1, 2, 3, 6, 9, 12, 15};
+
     // Global param management so pages are same across machines
     ParamManager trackParams_;
     ParamManager noteParams_;
@@ -113,7 +117,7 @@ namespace FormOmni
 
     const char *FormMachineOmni::getF3shortcutName()
     {
-        return "LENGTH";
+        return "LEN / RATE";
     }
 
     void FormMachineOmni::setTest()
@@ -860,6 +864,11 @@ namespace FormOmni
                 break;
             case FORMSHORTCUT_F3:
                 // Set track length
+                if(e.down() && thisKey >= 3 && thisKey <= 10)
+                {
+                    seq_.rate = kRateShortcuts[thisKey - 3];
+                    omxDisp.displayMessage("RATE 1/" + String(kSeqRates[seq_.rate]));
+                }
                 if (e.down() && thisKey >= 11 && thisKey < 27)
                 {
                     auto track = getTrack();

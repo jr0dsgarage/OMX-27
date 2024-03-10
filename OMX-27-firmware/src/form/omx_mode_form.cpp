@@ -839,11 +839,15 @@ void OmxModeForm::updateLEDs()
 	bool blinkState = omxLeds.getBlinkState();
 	bool slowBlink = omxLeds.getSlowBlinkState();
 
-	for (uint8_t i = 0; i < kNumMachines; i++)
+	// F3 machine might use these keys for shortcuts
+	if (omxFormGlobal.shortcutMode != FORMSHORTCUT_F3)
 	{
-		int color = (i == selectedMachine_ && slowBlink) ? LEDOFF : getMachineColor(i);
+		for (uint8_t i = 0; i < kNumMachines; i++)
+		{
+			int color = (i == selectedMachine_ && slowBlink) ? LEDOFF : getMachineColor(i);
 
-		strip.setPixelColor(i + 3, color);
+			strip.setPixelColor(i + 3, color);
+		}
 	}
 
 	if (omxFormGlobal.shortcutMode == FORMSHORTCUT_NONE && omxFormGlobal.formMode == FORMMODE_SELECTMACHINE)
