@@ -628,6 +628,30 @@ namespace FormOmni
 
             bool shouldBeOnRate = currentStep->nudge == 0;
 
+            bool isSwingStep = false;
+            bool isNextSwingStep = false;
+
+            if(track->swingDivision == 0) // 16th
+            {
+                // 1SxS2SxS3SxS4SxS
+                isSwingStep = grooveCounter_ % 2 == 1; // Swing every other 16th. Basically every even 16th
+                isNextSwingStep = (grooveCounter_ + 1) % 2 == 1;
+            }
+            else if(track->swingDivision == 1) // 8th
+            {
+                // 1xSx2xSx3xSx4xSx
+                isSwingStep = grooveCounter_ % 4 == 2; // Swing ever other 8th note
+                isNextSwingStep = (grooveCounter_ + 1) % 4 == 2;
+            }
+
+            if(isSwingStep)
+            {
+                shouldBeOnRate = false;
+            }
+
+            float swingPerc = isSwingStep ? track->swing / 100.0f : 0.0f;
+            float nextSwingPerc = isNextSwingStep ? track->swing / 100.0f : 0.0f;
+
             // if(track->tripletMode == 1 && grooveCounter_ % 4 != 0)
             // {
             //     shouldBeOnRate = false;
@@ -664,27 +688,10 @@ namespace FormOmni
             int8_t nudgeCurrent = currentStep->nudge * directionIncrement;
             int8_t nudgeNext = nextStep->nudge * directionIncrement;
 
-            // bool isSwingStep = false;
-            // bool isNextSwingStep = false;
-            // float swingPerc = track->swing / 100.0f;
-
-            // if(track->swingDivision == 0) // 16th
-            // {
-            //     // 1SxS2SxS3SxS4SxS
-            //     isSwingStep = grooveCounter_ % 2 == 1; // Swing every other 16th. Basically every even 16th
-            //     isNextSwingStep = (grooveCounter_ + 1) % 2 == 1;
-            // }
-            // else if(track->swingDivision == 1) // 8th
-            // {
-            //     // 1xSx2xSx3xSx4xSx
-            //     isSwingStep = grooveCounter_ % 4 == 2; // Swing ever other 8th note
-            //     isNextSwingStep = (grooveCounter_ + 1) % 4 == 2;
-            // }
-
             // float nudgePerc = abs(currentStep->nudge) / 60.0f * (currentStep->nudge < 0 ? -1 : 1);
-            int nudgeTicks = (nudgeCurrent / 60.0f) * ticksPerStep_;
+            int nudgeTicks = constrain((nudgeCurrent / 60.0f) + swingPerc, -1.0f, 1.0f) * ticksPerStep_;
             // float nextNudgePerc = abs(nextStep->nudge) / 60.0f * (nextStep->nudge < 0 ? -1 : 1);
-            int nextNudgeTicks = (nudgeNext / 60.0f) * ticksPerStep_;
+            int nextNudgeTicks = constrain((nudgeNext / 60.0f) + nextSwingPerc, -1.0f, 1.0f) * ticksPerStep_;
 
             // Apply Swing
             // By using the nudge system
