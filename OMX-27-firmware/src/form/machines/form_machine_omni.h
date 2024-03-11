@@ -62,6 +62,10 @@ namespace FormOmni
         void changeUIMode(uint8_t newMode, bool silent);
         void onUIModeChanged(uint8_t prevMode, uint8_t newMode);
 
+        // returns true if should draw generic page
+        void editPage(uint8_t page, uint8_t param, int8_t amtSlow, int8_t amtFast);
+        bool drawPage(uint8_t page);
+
         Track *getTrack();
         Step *getSelStep();
         uint8_t key16toStep(uint8_t key16);
