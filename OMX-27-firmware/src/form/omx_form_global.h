@@ -3,6 +3,7 @@
 // #include "../../hardware/omx_keypad.h"
 // #include "../../utils/param_manager.h"
 #include "../utils/music_scales.h"
+#include "../utils/PotPickupUtil.h"
 
 enum ShortCutMode
 {
@@ -41,6 +42,8 @@ MusicScales *musicScale;
 uint8_t shortcutMode;
 uint8_t formMode;
 uint8_t selMidiFX;
+
+PotPickupUtil potPickups[5];
 };
 
 extern OmxFormGlobalSettings omxFormGlobal;

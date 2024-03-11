@@ -53,6 +53,8 @@ OmxModeForm::OmxModeForm()
 
 	machines_[0]->setTest();
 
+	selectMachine(0);
+
 	// machines_[0]->setContext(this);
 	// machines_[0]->setNoteOnFptr(&OmxModeForm::seqNoteOnForwarder);
 	// machines_[0]->setNoteOffFptr(&OmxModeForm::seqNoteOffForwarder);
@@ -130,6 +132,7 @@ void OmxModeForm::selectMachine(uint8_t machineIndex)
 		return;
 
 	selectedMachine_ = machineIndex;
+	machines_[machineIndex]->onSelected();
 }
 
 FormMachineInterface *OmxModeForm::getSelectedMachine()
@@ -629,10 +632,16 @@ void OmxModeForm::onKeyUpdate(OMXKeypadEvent e)
 
 	if(selMachine->doesConsumeKeys())
 	{
-		if(omxFormGlobal.shortcutMode != FORMSHORTCUT_AUX)
+		// if(omxFormGlobal.shortcutMode != FORMSHORTCUT_AUX)
+		// {
+		// 	selMachine->onKeyUpdate(e);
+		// }
+
+		if(!keyConsumed)
 		{
 			selMachine->onKeyUpdate(e);
 		}
+
 		return;
 	}
 

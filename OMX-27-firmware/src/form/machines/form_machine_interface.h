@@ -65,6 +65,9 @@ public:
 
 	virtual void setTest(){};
 
+	// Selected Machine in form
+	virtual void onSelected() {}
+
     // AUX + Top 1 = Play Stop
     // For Omni:
     // AUX + Top 2 = Reset

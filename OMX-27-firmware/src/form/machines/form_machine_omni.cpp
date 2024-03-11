@@ -85,12 +85,53 @@ namespace FormOmni
     {
     }
 
-
-
     FormMachineInterface *FormMachineOmni::getClone()
     {
         auto clone = new FormMachineOmni();
         return clone;
+    }
+
+    void FormMachineOmni::onSelected()
+    {
+        setPotPickups(OMNIPAGE_GBL1);
+    }
+
+    void FormMachineOmni::setPotPickups(uint8_t page)
+    {
+        switch (page)
+        {
+        case OMNIPAGE_STEP1:
+        {
+            auto selStep = getSelStep();
+
+            omxFormGlobal.potPickups[0].SetValRemap(selStep->vel, 0, 127);
+            omxFormGlobal.potPickups[1].SetValRemap(selStep->nudge, -60, 60);
+            omxFormGlobal.potPickups[2].SetValRemap(selStep->len, 0, 22);
+            omxFormGlobal.potPickups[3].SetValRemap(selStep->mfxIndex, 0, 6);
+        }
+        break;
+        case OMNIPAGE_STEPCONDITION:
+            break;
+        case OMNIPAGE_STEPNOTES:
+            break;
+        case OMNIPAGE_STEPPOTS:
+            break;
+        case OMNIPAGE_GBL1:
+        {
+            omxFormGlobal.potPickups[0].SetValRemap(activePage_, 0, kPageMax[zoomLevel_] - 1);
+            omxFormGlobal.potPickups[1].SetValRemap(zoomLevel_, 0, 2);
+            omxFormGlobal.potPickups[4].SetValRemap(omniUiMode_, 0, OMNIUIMODE_COUNT - 1);
+        }
+        break;
+        case OMNIPAGE_1:
+            break;
+        case OMNIPAGE_2:
+            break;
+        case OMNIPAGE_3:
+            break;
+        case OMNIPAGE_TPAT:
+            break;
+        };
     }
 
     bool FormMachineOmni::doesConsumePots()
@@ -135,7 +176,6 @@ namespace FormOmni
         case OMNIUIMODE_CONFIG:
         case OMNIUIMODE_MIX:
         case OMNIUIMODE_LENGTH:
-        case OMNIUIMODE_COUNT:
             return false;
         case OMNIUIMODE_TRANSPOSE:
         case OMNIUIMODE_STEP:
@@ -243,9 +283,37 @@ namespace FormOmni
 
     void FormMachineOmni::selStep(uint8_t stepIndex)
     {
+        if (stepHeld_)
+        {
+            setPotPickups(OMNIPAGE_GBL1);
+            stepHeld_ = false;
+        }
         selStep_ = key16toStep(stepIndex);
 
         omniNoteEditor.setSelStep(selStep_);
+    }
+
+    void FormMachineOmni::stepHeld(uint8_t key16Index)
+    {
+        if(!stepHeld_)
+        {
+            selStep(key16Index);
+            setPotPickups(trackParams_.getSelPage());
+            stepHeld_ = true;
+        }
+    }
+
+    void FormMachineOmni::stepReleased(uint8_t key16Index)
+    {
+        if(stepHeld_)
+        {
+            uint8_t stepIndex = key16toStep(key16Index);
+            if(selStep_ == stepIndex)
+            {
+                setPotPickups(OMNIPAGE_GBL1);
+                stepHeld_ = false;
+            }
+        }
     }
 
     void FormMachineOmni::copyStep(uint8_t keyIndex)
@@ -504,13 +572,15 @@ namespace FormOmni
             uint8_t prevMode = omniUiMode_;
             omniUiMode_ = newMode;
             onUIModeChanged(prevMode, newMode);
-
             encoderSelect_ = true;
 
             if (!silent)
             {
                 omxDisp.displayMessage(kUIModeMsg[omniUiMode_]);
             }
+
+            omxLeds.setDirty();
+            omxDisp.setDirty();
         }
     }
 
@@ -523,22 +593,86 @@ namespace FormOmni
     {
         // Serial.println("onPotChanged: " + String(potIndex) + " " + String(prevValue) + " " + String(newValue));
 
-        if(potIndex == 0)
+        // This guy is always setting the mode
+        if (potIndex == 4)
         {
-            activePage_ = map(newValue, 0, 127, 0, kPageMax[zoomLevel_] - 1);
-            omxDisp.displayMessage("Page " + String(activePage_ + 1));
+            uint8_t newUIMode = omxFormGlobal.potPickups[4].UpdatePotGetMappedValue(prevValue, newValue, 0, OMNIUIMODE_COUNT - 1);
+            changeUIMode(newUIMode, true);
+            omxFormGlobal.potPickups[4].DisplayLabel(kUIModeMsg[omniUiMode_]);
+            return;
         }
-        else if(potIndex == 1)
-        {
-            zoomLevel_ = map(newValue, 0, 127, 0, 2);
-            omxDisp.displayMessage("Zoom " + String(kZoomMults[zoomLevel_]) + "x");
-        }
-        else if (potIndex == 4)
-        {
-            uint8_t newUIMode = map(newValue, 0, 127, 0, OMNIUIMODE_COUNT - 1);
 
-            changeUIMode(newUIMode, false);
+        if (stepHeld_)
+        {
+            auto page = trackParams_.getSelPage();
+
+            switch (page)
+            {
+            case OMNIPAGE_STEP1:
+            {
+                auto selStep = getSelStep();
+
+                if (potIndex == 0)
+                {
+                    selStep->vel = omxFormGlobal.potPickups[0].UpdatePotGetMappedValue(prevValue, newValue, 0, 127);
+                    omxFormGlobal.potPickups[0].DisplayValue("Velocity", selStep->vel);
+                }
+                else if (potIndex == 1)
+                {
+                    selStep->nudge = omxFormGlobal.potPickups[1].UpdatePotGetMappedValue(prevValue, newValue, -60, 60);
+                    int8_t nudgePerc = selStep->nudge / 60.0f * 100;
+                    tempString = "Nudge " + String(nudgePerc) + "%";
+                    omxFormGlobal.potPickups[1].DisplayLabel(tempString.c_str());
+                }
+                else if (potIndex == 2)
+                {
+                    selStep->len = omxFormGlobal.potPickups[2].UpdatePotGetMappedValue(prevValue, newValue, 0, 22);
+                    tempString = "Nt Length " + getStepLenString(selStep->len);
+                    omxFormGlobal.potPickups[2].DisplayLabel(tempString.c_str());
+                }
+                else if (potIndex == 3)
+                {
+                    selStep->mfxIndex = omxFormGlobal.potPickups[3].UpdatePotGetMappedValue(prevValue, newValue, 0, 6);
+                    tempString = "MidiFX " + (selStep->mfxIndex == 0 ? "Off" : selStep->mfxIndex == 1 ? "Track"
+                                                                                                      : String(selStep->mfxIndex - 1));
+                    omxFormGlobal.potPickups[3].DisplayLabel(tempString.c_str());
+                }
+            }
+            break;
+            case OMNIPAGE_STEPCONDITION:
+                break;
+            case OMNIPAGE_STEPNOTES:
+                break;
+            case OMNIPAGE_STEPPOTS:
+                break;
+            case OMNIPAGE_GBL1:
+                break;
+            case OMNIPAGE_1:
+                break;
+            case OMNIPAGE_2:
+                break;
+            case OMNIPAGE_3:
+                break;
+            case OMNIPAGE_TPAT:
+                break;
+            };
         }
+        else
+        {
+            if (potIndex == 0)
+            {
+                activePage_ = omxFormGlobal.potPickups[0].UpdatePotGetMappedValue(prevValue, newValue, 0, kPageMax[zoomLevel_] - 1);
+                omxFormGlobal.potPickups[0].DisplayValue("Page", activePage_ + 1);
+            }
+            else if (potIndex == 1)
+            {
+                zoomLevel_ = omxFormGlobal.potPickups[1].UpdatePotGetMappedValue(prevValue, newValue, 0, 2);
+                tempString = "Zoom " + String(kZoomMults[zoomLevel_]) + "x";
+                omxFormGlobal.potPickups[1].DisplayLabel(tempString.c_str());
+            }
+        }
+
+        
     }
 
     void FormMachineOmni::onClockTick()
@@ -861,6 +995,23 @@ namespace FormOmni
         return lenMult;
     }
 
+    String FormMachineOmni::getStepLenString(uint8_t len)
+    {
+        float stepLenMult = getStepLenMult(len);
+
+        if (stepLenMult < 1.0f)
+        {
+            return String(stepLenMult, 2);
+            omxDisp.setLegend(2, "LEN", String(stepLenMult, 2));
+        }
+        else if (stepLenMult > 16)
+        {
+            uint8_t bar = stepLenMult / 16.0f;
+            return String(bar) + "br";
+        }
+        return String(stepLenMult, 0);
+    }
+
     float FormMachineOmni::getGateMult(uint8_t gate)
     {
         return max(gate / 100.f * 2, 0.01f);
@@ -935,6 +1086,7 @@ namespace FormOmni
                 else if (thisKey >= 13 && thisKey < 19)
                 {
                     changeUIMode(thisKey - 13, false);
+                    setPotPickups(OMNIPAGE_GBL1);
                     return true;
                 }
             }
@@ -962,6 +1114,10 @@ namespace FormOmni
                     else if (e.down())
                     {
                         selStep(thisKey - 11);
+                    }
+                    else
+                    {
+                        stepReleased(thisKey - 11);
                     }
                 }
             }
@@ -1029,6 +1185,44 @@ namespace FormOmni
     }
     bool FormMachineOmni::onKeyHeldUpdate(OMXKeypadEvent e)
     {
+        uint8_t thisKey = e.key();
+
+        switch (omniUiMode_)
+        {
+        case OMNIUIMODE_CONFIG:
+        case OMNIUIMODE_MIX:
+        {
+            switch (omxFormGlobal.shortcutMode)
+            {
+            case FORMSHORTCUT_NONE:
+            {
+                if (thisKey >= 11 && thisKey < 27)
+                {
+                    stepHeld(thisKey - 11);
+                }
+            }
+            break;
+            case FORMSHORTCUT_AUX:
+                break;
+            case FORMSHORTCUT_F1:
+                break;
+            case FORMSHORTCUT_F2:
+                break;
+            case FORMSHORTCUT_F3:
+                break;
+            }
+        }
+        break;
+        case OMNIUIMODE_LENGTH:
+        break;
+        case OMNIUIMODE_TRANSPOSE:
+        break;
+        case OMNIUIMODE_STEP:
+        case OMNIUIMODE_NOTEEDIT:
+            omniNoteEditor.onKeyHeldUpdate(e, getTrack());
+            break;
+        }
+
         return true;
     }
     void FormMachineOmni::editPage(uint8_t page, uint8_t param, int8_t amtSlow, int8_t amtFast)
@@ -1195,23 +1389,7 @@ namespace FormOmni
 
             int8_t nudgePerc = (selStep->nudge / 60.0f) * 100;
             omxDisp.setLegend(1, "NUDG", nudgePerc);
-
-            float stepLenMult = getStepLenMult(selStep->len);
-
-            if (stepLenMult < 1.0f)
-            {
-                omxDisp.setLegend(2, "LEN", String(stepLenMult, 2));
-            }
-            else if (stepLenMult > 16)
-            {
-                uint8_t bar = stepLenMult / 16.0f;
-                omxDisp.setLegend(2, "LEN", String(bar) + "br");
-            }
-            else
-            {
-                omxDisp.setLegend(2, "LEN", String(stepLenMult, 0));
-            }
-
+            omxDisp.setLegend(2, "LEN", getStepLenString(selStep->len));
             omxDisp.setLegend(3, "MFX", selStep->mfxIndex == 0, selStep->mfxIndex == 1 ? "TRK" : String(selStep->mfxIndex - 1));
         }
         return true;

@@ -21,6 +21,9 @@ void OmxDisp::setup()
 
 void OmxDisp::clearDisplay()
 {
+	if(dispLockedTimer > 0)
+		return;
+
 	// Clear display
 	display.display();
 	setDirty();
@@ -115,6 +118,11 @@ void OmxDisp::chordBalanceMsg(int8_t balArray[], float velArray[], uint8_t secs)
 
 void OmxDisp::renderMessage()
 {
+	if(isDispLocked())
+	{
+		return;
+	}
+
 	if (specialMsgType_ == 0)
 	{
 		display.fillRect(0, 0, 128, 32, BLACK);
@@ -131,9 +139,14 @@ void OmxDisp::renderMessage()
 	}
 }
 
+bool OmxDisp::isDispLocked()
+{
+	return dispLockedTimer > 0;
+}
+
 bool OmxDisp::isMessageActive()
 {
-	return messageTextTimer > 0;
+	return messageTextTimer > 0 || isDispLocked();
 }
 
 void OmxDisp::u8g2centerText(const char *s, int16_t x, int16_t y, uint16_t w, uint16_t h)
@@ -728,35 +741,8 @@ void OmxDisp::dispValues16(int8_t valueArray[], uint8_t valueCount, int8_t minVa
 	// }
 }
 
-void OmxDisp::dispParamBar(int8_t potValue, int8_t targetValue, int8_t minValue, int8_t maxValue, bool pickedUp, bool centered, const char* bankName, const char* paramName)
+void OmxDisp::drawPotPickupBar(int8_t potValue, int8_t targetValue, int8_t minValue, int8_t maxValue, bool pickedUp, bool centered)
 {
-	if (isMessageActive())
-	{
-		renderMessage();
-		return;
-	}
-
-	display.fillRect(0, 0, 128, 32, BLACK);
-
-	// if (showLabels)
-	// {
-	// 	int8_t selIndex = constrain(selected - 16, -1, 127);
-	// 	dispLabelParams(selIndex, encSelActive, labels, labelCount, false);
-	// }
-
-	u8g2_display.setFontMode(1);
-	// u8g2_display.setFont(FONT_LABELS);
-	u8g2_display.setCursor(0, 0);
-
-	u8g2_display.setFont(FONT_LABELS);
-	u8g2leftText(bankName, 2, hline - 3, 128 - 4, 10);
-	u8g2_display.setFont(FONT_TENFAT);
-	u8g2leftText(paramName, 2, 18, 92 - 4, 12);
-
-	u8g2_display.setFont(FONT_BIG);
-	tempString = String(targetValue);
-	u8g2centerText(tempString.c_str(), 92, 18, 128 - 96 - 4, 22);
-
 	float potPerc = map(potValue, minValue, maxValue, 0, 1000) / 1000.0f;
 	float targetPerc = map(targetValue, minValue, maxValue, 0, 1000) / 1000.0f;
 
@@ -791,6 +777,98 @@ void OmxDisp::dispParamBar(int8_t potValue, int8_t targetValue, int8_t minValue,
 		display.fillRect(boxStartX + potWidth - 2, boxStartY - 3, 3, 1, BLACK);
 		display.fillRect(boxStartX + potWidth - 1, boxStartY - 2, 1, 1, BLACK);
 	}
+}
+
+void OmxDisp::dispPickupBarLabelTimed(const char* label, int8_t potValue, int8_t targetValue, int8_t minValue, int8_t maxValue, bool pickedUp, bool centered)
+{
+	bool initLock = dispLockedTimer > 0;
+	dispLockedTimer = MESSAGE_TIMEOUT_US;
+
+	if (!initLock && dirtyDisplayTimer <= displayRefreshRate)
+	{
+		return;
+	}
+
+
+	display.fillRect(0, 0, 128, 32, BLACK);
+	
+	// u8g2_display.setFontMode(1);
+	// u8g2_display.setCursor(0, 0);
+
+	// u8g2_display.setFont(FONT_LABELS);
+	// u8g2leftText(bankName, 2, hline - 3, 128 - 4, 10);
+	// u8g2_display.setFont(FONT_TENFAT);
+	// u8g2leftText(paramName, 2, 18, 92 - 4, 12);
+
+	// u8g2_display.setFont(FONT_BIG);
+	// tempString = String(dispValue);
+	// u8g2centerText(tempString.c_str(), 92, 18, 128 - 96 - 4, 22);
+
+	u8g2_display.setFontMode(1);
+	u8g2_display.setFont(FONT_TENFAT);
+	u8g2_display.setForegroundColor(WHITE);
+	u8g2_display.setBackgroundColor(BLACK);
+	u8g2centerText(label, 2, 18, 128 - 4, 12);
+
+	drawPotPickupBar(potValue, targetValue, minValue, maxValue, pickedUp, centered);
+
+	forceShowDisplay();
+}
+
+void OmxDisp::dispPickupBarValueTimed(int8_t dispValue, int8_t potValue, int8_t targetValue, int8_t minValue, int8_t maxValue, bool pickedUp, bool centered, const char* bankName, const char* paramName)
+{
+	bool initLock = dispLockedTimer > 0;
+	dispLockedTimer = MESSAGE_TIMEOUT_US;
+
+	if (!initLock && dirtyDisplayTimer <= displayRefreshRate)
+	{
+		return;
+	}
+
+	display.fillRect(0, 0, 128, 32, BLACK);
+	
+	u8g2_display.setFontMode(1);
+	u8g2_display.setCursor(0, 0);
+
+	u8g2_display.setFont(FONT_LABELS);
+	u8g2leftText(bankName, 2, hline - 3, 128 - 4, 10);
+	u8g2_display.setFont(FONT_TENFAT);
+	u8g2leftText(paramName, 2, 18, 92 - 4, 12);
+
+	u8g2_display.setFont(FONT_BIG);
+	tempString = String(dispValue);
+	u8g2centerText(tempString.c_str(), 92, 18, 128 - 96 - 4, 22);
+
+	drawPotPickupBar(potValue, targetValue, minValue, maxValue, pickedUp, centered);
+
+	setDirty();
+	showDisplay();
+}
+
+void OmxDisp::dispParamBar(int8_t potValue, int8_t targetValue, int8_t minValue, int8_t maxValue, bool pickedUp, bool centered, const char* bankName, const char* paramName)
+{
+	if (isMessageActive())
+	{
+		renderMessage();
+		return;
+	}
+
+	display.fillRect(0, 0, 128, 32, BLACK);
+
+	u8g2_display.setFontMode(1);
+	// u8g2_display.setFont(FONT_LABELS);
+	u8g2_display.setCursor(0, 0);
+
+	u8g2_display.setFont(FONT_LABELS);
+	u8g2leftText(bankName, 2, hline - 3, 128 - 4, 10);
+	u8g2_display.setFont(FONT_TENFAT);
+	u8g2leftText(paramName, 2, 18, 92 - 4, 12);
+
+	u8g2_display.setFont(FONT_BIG);
+	tempString = String(targetValue);
+	u8g2centerText(tempString.c_str(), 92, 18, 128 - 96 - 4, 22);
+
+	drawPotPickupBar(potValue, targetValue, minValue, maxValue, pickedUp, centered);
 }
 
 void OmxDisp::dispSlots(const char *slotNames[], uint8_t slotCount, uint8_t selected, uint8_t animPos, bool encSelActive, bool showLabels, const char *labels[], uint8_t labelCount)
@@ -1555,9 +1633,28 @@ void OmxDisp::UpdateMessageTextTimer()
 		if (messageTextTimer <= 0)
 		{
 			setDirty();
+			dirtyDisplayTimer = displayRefreshRate + 1;
 			messageTextTimer = 0;
 		}
 	}
+
+	if(dispLockedTimer > 0)
+	{
+		dispLockedTimer -= sysSettings.timeElasped;
+		if (dispLockedTimer <= 0)
+		{
+			setDirty();
+			dirtyDisplayTimer = displayRefreshRate + 1;
+			dispLockedTimer = 0;
+		}
+	}
+}
+
+void OmxDisp::forceShowDisplay()
+{
+	display.display();
+	dirtyDisplay = false;
+	dirtyDisplayTimer = 0;
 }
 
 void OmxDisp::showDisplay()

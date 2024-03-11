@@ -2,6 +2,7 @@
 #include "form_machine_interface.h"
 #include "omni_structs.h"
 
+
 namespace FormOmni
 {
 
@@ -12,6 +13,8 @@ namespace FormOmni
         FormMachineOmni();
         ~FormMachineOmni();
 
+	    void onSelected();
+
         FormMachineType getType() { return FORMMACH_OMNI; }
         FormMachineInterface *getClone() override;
 
@@ -21,7 +24,6 @@ namespace FormOmni
         bool doesConsumeLEDs() override; 
 
 	    const char* getF3shortcutName() override;
-
 
         void setTest() override;
 
@@ -49,6 +51,7 @@ namespace FormOmni
         OmniSeq seq_;
 
         uint8_t selStep_;
+        bool stepHeld_;
 
         uint8_t activePage_ = 0;
         uint8_t zoomLevel_ = 0;
@@ -62,6 +65,8 @@ namespace FormOmni
         void changeUIMode(uint8_t newMode, bool silent);
         void onUIModeChanged(uint8_t prevMode, uint8_t newMode);
 
+        void setPotPickups(uint8_t page);
+
         // returns true if should draw generic page
         void editPage(uint8_t page, uint8_t param, int8_t amtSlow, int8_t amtFast);
         bool drawPage(uint8_t page);
@@ -71,6 +76,8 @@ namespace FormOmni
         uint8_t key16toStep(uint8_t key16);
 
         void selStep(uint8_t stepIndex); // 0-15
+        void stepHeld(uint8_t key16Index); // 0-15
+        void stepReleased(uint8_t key16Index);
 
         Step bufferedStep_; 
 
@@ -109,11 +116,12 @@ namespace FormOmni
         void onRateChanged();
 
         float getStepLenMult(uint8_t len);
+        String getStepLenString(uint8_t len);
         float getGateMult(uint8_t gate);
 
         MidiNoteGroup step2NoteGroup(uint8_t noteIndex, Step *step);
         void triggerStep(Step *step);
 
-        // char foo[sizeof(Track)]
+        // char foo[sizeof(PotPickupUtil)]
     };
 }
