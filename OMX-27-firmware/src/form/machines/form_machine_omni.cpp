@@ -387,8 +387,9 @@ namespace FormOmni
         case OMNIUIMODE_CONFIG:
         case OMNIUIMODE_MIX:
         case OMNIUIMODE_LENGTH:
+        {
             int8_t prevPage = trackParams_.getSelPage();
-            
+
             trackParams_.changeParam(enc.dir());
 
             if (trackParams_.getSelPage() != prevPage)
@@ -424,13 +425,14 @@ namespace FormOmni
                     break;
                 }
             }
-            break;
+        }
+        break;
         case OMNIUIMODE_TRANSPOSE:
         case OMNIUIMODE_STEP:
         case OMNIUIMODE_NOTEEDIT:
             break;
         }
-        
+
         omxDisp.setDirty();
     }
     void FormMachineOmni::onEncoderChangedEditParam(Encoder::Update enc)
@@ -1051,7 +1053,7 @@ namespace FormOmni
             }
             else if (param == 3)
             {
-                selStep->mfxIndex = constrain(selStep->mfxIndex + amtSlow, 0, 7);
+                selStep->mfxIndex = constrain(selStep->mfxIndex + amtSlow, 0, 6);
             }
         }
         break;
@@ -1065,11 +1067,11 @@ namespace FormOmni
             }
             else if (param == 1)
             {
-                selStep->condition = constrain(selStep->condition + amtSlow, 0, 36);
+                selStep->condition = constrain(selStep->condition + amtSlow, 0, 35);
             }
             else if (param == 2)
             {
-                selStep->func = constrain(selStep->func + amtSlow, 0, 23);
+                selStep->func = constrain(selStep->func + amtSlow, 0, 22);
             }
             else if (param == 3)
             {
