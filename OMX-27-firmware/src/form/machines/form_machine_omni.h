@@ -77,6 +77,9 @@ namespace FormOmni
 
         uint8_t playingStep_;
 
+        // Counts from 0 to 16 during playback to determine groove
+        uint8_t grooveCounter_;
+
         uint8_t lastTriggeredStepIndex;
 
         Micros nextStepTime_;

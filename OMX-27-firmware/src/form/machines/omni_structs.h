@@ -147,7 +147,9 @@ namespace FormOmni
         uint8_t len : 6; // Max 63, Length of track, 0 - 63, maps to 1 - 64
         // This is rot in current Seq, just going to make this a utility function that moves everything
         uint8_t startstep : 6;     // Max 63,  Step that track starts on, -1 for random?
-        uint8_t swing : 7;         // Amount of swing
+        int8_t swing : 8;         // Amount of swing, + or minus 100. Shifts off notes forward back, similar to nudge, but applies to whole track. 
+        uint8_t swingDivision : 1; // 16th or 8th note swing
+        uint8_t tripletMode : 1;   // automatically nudges every 2nd and 3rd step to become a triplet
         uint8_t playDirection : 1; // Forward or back
         uint8_t playMode : 3;      // Shuffles and randomizes
         uint8_t midiFx : 3;        // MidiFX index, 0 for off, 1-5 for MidiFX Groups 1-5
@@ -157,6 +159,8 @@ namespace FormOmni
             len = 15;
             startstep = 0;
             swing = 0;
+            swingDivision = 0;
+            tripletMode = 0;
             playDirection = TRACKDIRECTION_FORWARD;
             playMode = TRACKMODE_NONE;
             midiFx = 0;

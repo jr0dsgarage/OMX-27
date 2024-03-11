@@ -33,6 +33,19 @@ namespace FormOmni
     const uint8_t kZoomMults[] = {1,2,4};
     const uint8_t kPageMax[] = {4,2,1};
 
+    // 0, 0.33333, 0.66666, 0.83333
+    // 0, 0.25, 0.5, 0.75, 1.0
+    // 0, 0.083333, 0.166666, 0.083333
+    // Percent, how much to nudge note forward to become a triplet note
+    const float kTripletNudge[] = {0.0f, 0.3333333f, 0.6666666f, 0.3333333f};
+
+    // Mod to use for swing
+    // 16th is 2
+    // 0S0S0S
+    // 00S00
+    // 10001000100010001000
+    const uint8_t kSwingDivisionMod[] = {2,4};
+
     // Global param management so pages are same across machines
     ParamManager trackParams_;
     ParamManager noteParams_;
@@ -170,12 +183,14 @@ namespace FormOmni
 
         if (omxFormGlobal.isPlaying)
         {
+            grooveCounter_ = 0;
             ticksTilNext16Trigger_ = 0;
             ticksTilNextTrigger_ = ticksTilNext16Trigger_;
             ticksTilNextTriggerRate_ = ticksTilNext16Trigger_;
         }
         else
         {
+            grooveCounter_ = 0;
             ticksTilNextTrigger_ = 0;
             ticksTilNext16Trigger_ = 0;
             ticksTilNextTriggerRate_ = 0;
@@ -395,6 +410,18 @@ namespace FormOmni
                     selStep->len = constrain(selStep->len + amtSlow, 0, 22);
                 }
                 break;
+                case 2:
+                {
+                    auto track = getTrack();
+                    track->swing = constrain(track->swing + amtFast, -100, 100);
+                }
+                break;
+                case 3:
+                {
+                    auto track = getTrack();
+                    track->swingDivision = constrain(track->swingDivision + amtSlow, 0, 1);
+                }
+                break;
                 }
             }
             break;
@@ -431,6 +458,12 @@ namespace FormOmni
                 case 1:
                     seq_.transposeMode = constrain(seq_.transposeMode + amtSlow, 0, 1);
                     break;
+                case 2:
+                {
+                    auto track = getTrack();
+                    track->tripletMode = constrain(track->tripletMode + amtSlow, 0, 1);
+                }
+                break;
                 }
             }
             break;
@@ -611,13 +644,45 @@ namespace FormOmni
             int8_t nudgeCurrent = currentStep->nudge * directionIncrement;
             int8_t nudgeNext = nextStep->nudge * directionIncrement;
 
+            bool isSwingStep = false;
+            bool isNextSwingStep = false;
+            float swingPerc = track->swing / 100.0f;
+
+            if(track->swingDivision == 0) // 16th
+            {
+                // 1SxS2SxS3SxS4SxS
+                isSwingStep = grooveCounter_ % 2 == 1; // Swing every other 16th. Basically every even 16th
+                isNextSwingStep = (grooveCounter_ + 1) % 2 == 1;
+            }
+            else if(track->swingDivision == 1) // 8th
+            {
+                // 1xSx2xSx3xSx4xSx
+                isSwingStep = grooveCounter_ % 4 == 2; // Swing ever other 8th note
+                isNextSwingStep = (grooveCounter_ + 1) % 4 == 2;
+            }
+
             // float nudgePerc = abs(currentStep->nudge) / 60.0f * (currentStep->nudge < 0 ? -1 : 1);
             int nudgeTicks = (nudgeCurrent / 60.0f) * ticksPerStep_;
-
             // float nextNudgePerc = abs(nextStep->nudge) / 60.0f * (nextStep->nudge < 0 ? -1 : 1);
             int nextNudgeTicks = (nudgeNext / 60.0f) * ticksPerStep_;
 
-            if(!onRate && nudgeNext == 0)
+            // Apply Swing
+            // By using the nudge system
+            nudgeTicks = isSwingStep ? (nudgeTicks + (swingPerc * ticksPerStep_)) : nudgeTicks;
+            nextNudgeTicks = isNextSwingStep ? (nextNudgeTicks + (swingPerc * ticksPerStep_)) : nextNudgeTicks;
+
+            if(track->tripletMode == 1)
+            {
+                uint8_t modPos = grooveCounter_ % 4;
+                uint8_t nextModPos = (grooveCounter_ + 1) % 4;
+                nudgeTicks = nudgeTicks + (kTripletNudge[modPos] * ticksPerStep_);
+                nextNudgeTicks = nextNudgeTicks + (kTripletNudge[nextModPos] * ticksPerStep_);
+            }
+
+            nudgeTicks = constrain(nudgeTicks, -ticksPerStep_, ticksPerStep_);
+            nextNudgeTicks = constrain(nextNudgeTicks, -ticksPerStep_, ticksPerStep_);
+
+            if(!onRate && nextNudgeTicks == 0)
             {
                 ticksTilNextTrigger_ = ticksTilNextTriggerRate_;
             }
@@ -626,7 +691,7 @@ namespace FormOmni
                 ticksTilNextTrigger_ = ticksPerStep_ + nextNudgeTicks - nudgeTicks;
             }
 
-            if(nudgeCurrent < 0 && !onRate)
+            if(nudgeTicks < 0 && !onRate)
             {
                 ticksTilNextTrigger_ += ticksPerStep_;
             }
@@ -673,6 +738,8 @@ namespace FormOmni
 
             // loop++;
 
+            // always counts forward
+            grooveCounter_ = (grooveCounter_ + 1) % 16;
             playingStep_ = nextStepIndex;
             omxLeds.setDirty();
         }
@@ -967,6 +1034,11 @@ namespace FormOmni
                 {
                     omxDisp.setLegend(1, "LEN", String(stepLenMult, 0));
                 }
+
+                auto track = getTrack();
+
+                omxDisp.setLegend(2, "SWNG", track->swing);
+                omxDisp.setLegend(3, "S-DV", track->swingDivision == 0 ? "16th" : "8th");
             }
             break;
             case OMNIPAGE_1: // Velocity, Channel, Rate, Gate
@@ -981,8 +1053,11 @@ namespace FormOmni
             break;
             case OMNIPAGE_2: // Transpose, TransposeMode
             {
+                auto track = getTrack();
+
                 omxDisp.setLegend(0, "TPOS", 100);
                 omxDisp.setLegend(1, "TYPE", seq_.transposeMode == 0 ? "INTR" : "SEMI");
+                omxDisp.setLegend(2, "TRIP", track->tripletMode == 0 ? "OFF" : "ON");
             }
             break;
             case OMNIPAGE_3: // SendMidi, SendCV
