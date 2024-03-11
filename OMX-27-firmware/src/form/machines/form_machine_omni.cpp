@@ -37,7 +37,7 @@ namespace FormOmni
     // 0, 0.25, 0.5, 0.75, 1.0
     // 0, 0.083333, 0.166666, 0.083333
     // Percent, how much to nudge note forward to become a triplet note
-    const float kTripletNudge[] = {0.0f, 0.3333333f, 0.6666666f, 0.3333333f};
+    const float kTripletNudge[] = {0.0f, 1.0f/3.0f, 1.0f/3.0f * 2.0f, 0.0f};
 
     // Mod to use for swing
     // 16th is 2
@@ -60,6 +60,8 @@ namespace FormOmni
         {
             trackParams_.addPages(OMNIPAGE_COUNT);
         }
+
+        resetPlayback();
 
         onRateChanged();
     }
@@ -462,6 +464,8 @@ namespace FormOmni
                 {
                     auto track = getTrack();
                     track->tripletMode = constrain(track->tripletMode + amtSlow, 0, 1);
+                    onRateChanged();
+
                 }
                 break;
                 }
@@ -612,7 +616,6 @@ namespace FormOmni
 
         // uint8_t loop = 0;
 
-
         triggeredNotes_.clear();
 
         // can trigger twice in once clock if note is fully nudged
@@ -623,8 +626,15 @@ namespace FormOmni
 
             auto currentStep = &track->steps[playingStep_];
 
+            bool shouldBeOnRate = currentStep->nudge == 0;
+
+            // if(track->tripletMode == 1 && grooveCounter_ % 4 != 0)
+            // {
+            //     shouldBeOnRate = false;
+            // }
+
             // Step should be on rate, delay until on rate
-            if(currentStep->nudge == 0 && !onRate)
+            if(shouldBeOnRate && !onRate)
             {
                 ticksTilNextTrigger_ = ticksTilNextTriggerRate_;
                 break;
@@ -633,6 +643,16 @@ namespace FormOmni
             int8_t directionIncrement = track->playDirection == TRACKDIRECTION_FORWARD ? 1 : -1;
 
             uint8_t nextStepIndex = (playingStep_ + length + directionIncrement) % length;
+
+            // Skip every 4th step
+            if(track->tripletMode == 1)
+            {
+                if(nextStepIndex % 4 == 3)
+                {
+                    // increment again
+                    nextStepIndex = (nextStepIndex + length + directionIncrement) % length;
+                }
+            }
             // uint8_t nextStepIndex = (playingStep_ + directionIncrement) % length;
             auto nextStep = &track->steps[nextStepIndex];
 
@@ -644,22 +664,22 @@ namespace FormOmni
             int8_t nudgeCurrent = currentStep->nudge * directionIncrement;
             int8_t nudgeNext = nextStep->nudge * directionIncrement;
 
-            bool isSwingStep = false;
-            bool isNextSwingStep = false;
-            float swingPerc = track->swing / 100.0f;
+            // bool isSwingStep = false;
+            // bool isNextSwingStep = false;
+            // float swingPerc = track->swing / 100.0f;
 
-            if(track->swingDivision == 0) // 16th
-            {
-                // 1SxS2SxS3SxS4SxS
-                isSwingStep = grooveCounter_ % 2 == 1; // Swing every other 16th. Basically every even 16th
-                isNextSwingStep = (grooveCounter_ + 1) % 2 == 1;
-            }
-            else if(track->swingDivision == 1) // 8th
-            {
-                // 1xSx2xSx3xSx4xSx
-                isSwingStep = grooveCounter_ % 4 == 2; // Swing ever other 8th note
-                isNextSwingStep = (grooveCounter_ + 1) % 4 == 2;
-            }
+            // if(track->swingDivision == 0) // 16th
+            // {
+            //     // 1SxS2SxS3SxS4SxS
+            //     isSwingStep = grooveCounter_ % 2 == 1; // Swing every other 16th. Basically every even 16th
+            //     isNextSwingStep = (grooveCounter_ + 1) % 2 == 1;
+            // }
+            // else if(track->swingDivision == 1) // 8th
+            // {
+            //     // 1xSx2xSx3xSx4xSx
+            //     isSwingStep = grooveCounter_ % 4 == 2; // Swing ever other 8th note
+            //     isNextSwingStep = (grooveCounter_ + 1) % 4 == 2;
+            // }
 
             // float nudgePerc = abs(currentStep->nudge) / 60.0f * (currentStep->nudge < 0 ? -1 : 1);
             int nudgeTicks = (nudgeCurrent / 60.0f) * ticksPerStep_;
@@ -668,19 +688,23 @@ namespace FormOmni
 
             // Apply Swing
             // By using the nudge system
-            nudgeTicks = isSwingStep ? (nudgeTicks + (swingPerc * ticksPerStep_)) : nudgeTicks;
-            nextNudgeTicks = isNextSwingStep ? (nextNudgeTicks + (swingPerc * ticksPerStep_)) : nextNudgeTicks;
+            // nudgeTicks = isSwingStep ? (nudgeTicks + (swingPerc * ticksPerStep_)) : nudgeTicks;
+            // nextNudgeTicks = isNextSwingStep ? (nextNudgeTicks + (swingPerc * ticksPerStep_)) : nextNudgeTicks;
 
-            if(track->tripletMode == 1)
-            {
-                uint8_t modPos = grooveCounter_ % 4;
-                uint8_t nextModPos = (grooveCounter_ + 1) % 4;
-                nudgeTicks = nudgeTicks + (kTripletNudge[modPos] * ticksPerStep_);
-                nextNudgeTicks = nextNudgeTicks + (kTripletNudge[nextModPos] * ticksPerStep_);
-            }
+            // if(track->tripletMode == 1)
+            // {
+            //     uint8_t modPos = grooveCounter_ % 4;
+            //     uint8_t nextModPos = (grooveCounter_ + 1) % 4;
+            //     // nudgeTicks = nudgeTicks + (kTripletNudge[modPos] * ticksPerStep_);
+            //     // nextNudgeTicks = nextNudgeTicks + (kTripletNudge[nextModPos] * ticksPerStep_);
 
-            nudgeTicks = constrain(nudgeTicks, -ticksPerStep_, ticksPerStep_);
-            nextNudgeTicks = constrain(nextNudgeTicks, -ticksPerStep_, ticksPerStep_);
+
+            //     nudgeTicks = kTripletNudge[modPos] * ticksPerStep_;
+            //     nextNudgeTicks = kTripletNudge[nextModPos] * ticksPerStep_;
+            // }
+
+            // nudgeTicks = constrain(nudgeTicks, -ticksPerStep_, ticksPerStep_);
+            // nextNudgeTicks = constrain(nextNudgeTicks, -ticksPerStep_, ticksPerStep_);
 
             if(!onRate && nextNudgeTicks == 0)
             {
@@ -781,7 +805,15 @@ namespace FormOmni
     void FormMachineOmni::onRateChanged()
     {
         int8_t rate = kSeqRates[seq_.rate];
+
+        auto track = getTrack();
+
         ticksPerStep_ = roundf((PPQ * 4) / (float)rate);
+
+        if(track->tripletMode == 1)
+        {
+            ticksPerStep_ = ticksPerStep_ * 4 / 3.0f;
+        }
 
         // ticksTilNextTrigger_ = 0; // Should we reset this?
 
@@ -791,6 +823,11 @@ namespace FormOmni
         stepLengthMult_ = 16.0f / rate;
 
         stepMicros_ = clockConfig.step_micros * 16 / rate;
+
+        if(track->tripletMode == 1)
+        {
+            stepMicros_ = stepMicros_ * 4 / 3;
+        }
     }
 
     float FormMachineOmni::getStepLenMult(uint8_t len)
