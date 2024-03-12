@@ -34,6 +34,7 @@ enum OMXMode
 	MODE_MIDI = 0,
 	MODE_DRUM,
 	MODE_CHORDS,
+	MODE_FORM,
 	MODE_S1,
 	MODE_S2,
 	MODE_GRIDS,
@@ -60,6 +61,9 @@ enum MIDIFXTYPE
 };
 
 extern const OMXMode DEFAULT_MODE;
+
+#define NUM_MIDIFX_GROUPS 5
+#define NUM_MIDIFX_SLOTS 8
 
 enum FUNCKEYMODE
 {

@@ -2,7 +2,7 @@
 #include "consts/consts.h"
 
 const OMXMode DEFAULT_MODE = MODE_MIDI;
-const uint8_t EEPROM_VERSION = 36;
+const uint8_t EEPROM_VERSION = 37;
 
 // v30 - adds storage to header for velocity
 // v31 - adds storage for drums
@@ -74,7 +74,7 @@ const char *exitMsg = "Exit";
 const char *paramOffMsg = "OFF";
 const char *paramOnMsg = "ON";
 
-const char *modes[] = {"MI", "DRUM", "CH", "S1", "S2", "GR", "EL", "OM"};
+const char *modes[] = {"MI", "DRUM", "CH", "FORM", "S1", "S2", "GR", "EL", "OM"};
 const char *macromodes[] = {"Off", "M8", "NRN", "DEL"};
 const int nummacromodes = 3;
 
@@ -107,11 +107,14 @@ const int notes[] = {0,
 					 61, 63, 66, 68, 70, 73, 75, 78, 80, 82,
 					 59, 60, 62, 64, 65, 67, 69, 71, 72, 74, 76, 77, 79, 81, 83, 84};
 
+// I'm not sure this is actually used? Just burning up memory.
 const int steps[] = {0,
 					 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
 					 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26};
 
-const int midiKeyMap[] = {12, 1, 13, 2, 14, 15, 3, 16, 4, 17, 5, 18, 19, 6, 20, 7, 21, 22, 8, 23, 9, 24, 10, 25, 26};
+// Maps note numbers starting at B to key numbers
+// If using octaves, lowest midi note 0 is a C, so add 1. 
+const int midiKeyMap[] = {11, 12, 1, 13, 2, 14, 15, 3, 16, 4, 17, 5, 18, 19, 6, 20, 7, 21, 22, 8, 23, 9, 24, 10, 25, 26};
 
 Adafruit_MCP4725 dac;
 SysSettings sysSettings;

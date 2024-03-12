@@ -1,5 +1,8 @@
 #pragma once
 
+extern const int ROOTNOTECOLOR;
+extern const int INSCALECOLOR;
+
 class MusicScales
 {
 public:

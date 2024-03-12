@@ -262,3 +262,8 @@ uint8_t ParamManager::getNumOfParamsForPage(uint8_t pageIndex)
 
 	return pageConfigs[pageIndex].numberOfParams;
 }
+
+bool ParamManager::isPageAndParam(int8_t pageIndex, int8_t paramIndex)
+{
+	return getSelPage() == pageIndex && getSelParam() == paramIndex;
+}
