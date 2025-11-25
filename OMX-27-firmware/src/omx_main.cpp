@@ -1,5 +1,7 @@
 #include "omx_main.h"
 #include "globals.h"
+#include "hardware/omx_hardware.h"
+#include "hardware/hardware_config.h"
 #include "utils/omx_storage_mgr.h"
 #include "modes/omx_mode_mgr.h"
 #include "hardware/omx_inputs.h"
@@ -72,50 +74,15 @@ void report_ram()
 
 void OMXMain::setup()
 {
-
-#if BOARDTYPE == TEENSY4
-// 	Serial.println("Teensy 4.0");
-// 	Serial.println("DAC Start!");
-	dac.begin(DAC_ADDR);
-
-#elif BOARDTYPE == OMX2040
-// 	Serial.println("RP2040");
-	TinyUSBDevice.setManufacturerDescriptor(mfgstr);
-	TinyUSBDevice.setProductDescriptor(prodstr);
-
-	pinMode(REDLED, OUTPUT);	// RED LED
-	pinMode(BLUELED, OUTPUT);	// BLUE LED
-	digitalWrite(REDLED, LOW); 	// digitalWrite(REDLED, LOW);
-	digitalWrite(BLUELED, HIGH);
-
-	pinMode(FIVEVEN, OUTPUT); 		// 5v enable Pin
-	digitalWrite(FIVEVEN, HIGH);	// Turn 5v enable ON
-
-	pinMode(TXLED, OUTPUT); 	// TX
-	pinMode(RXLED, INPUT); 	// RX
-
-	digitalWrite(TXLED, LOW);
-	digitalWrite(RXLED, LOW);
-	Wire1.setSDA(I2C_SDA);		// i2c1 SDA
-	Wire1.setSCL(I2C_SCL);		// i2c1 SCL
-
-// 	Serial1.setRX(RXLED);
-// 	Serial1.setTX(TXLED);
-
-	dac.begin(DAC_ADDR, &Wire1);
-
-	// Initialize WebUSB for connection notification, etc
- 	setupWebUSB();
-
-#else
-// 	Serial.println("Teensy 3.2");
-#endif
+	OmxHardware::setup();
+	OmxHardware::initDAC();
+	OmxHardware::initWebUSB();
 
 	// HW MIDI
 	MM::begin();
 
 	// CV GATE pin
-	pinMode(CVGATE_PIN, OUTPUT);
+	pinMode(kCVGATE_PIN, OUTPUT);
 	// ENCODER BUTTON pin
 	pinMode(buttonPin, INPUT_PULLUP);
 
@@ -136,72 +103,19 @@ void OMXMain::setup()
 	omxUtil.restartClocks();
 	omxUtil.subModeClearStorage.setStoragePtr(storage);
 
-
-// #if BOARDTYPE == OMX2040
-	// while (!TinyUSBDevice.mounted()){
-	// 	delay(100);
-	// }
-// #endif
-
 	// Serial
 	Serial.begin(115200);
 	delay(100);
 
-
-	// SET ANALOG READ resolution to teensy's 13 usable bits
-#if BOARDTYPE == TEENSY4
-	randomSeed(analogRead(13));
-	srand(analogRead(13));
-	analogReadResolution(10); // Teensy 4 = 10 bits
-#elif BOARDTYPE == OMX2040
-// 	randomSeed(analogRead(29));
-// 	srand(analogRead(29));
-	analogReadResolution(10); // MUX = 10 bits
-#else
-	randomSeed(analogRead(13));
-	srand(analogRead(13));
-	analogReadResolution(13); // Teensy 3.x = 13 bits
-#endif
-
-
-	// initialize ANALOG INPUTS and ResponsiveAnalogRead
-	for (int i = 0; i < potCount; i++)
-	{
-// 		potSettings.analog[i] = new ResponsiveAnalogRead(0, true, .001);
-// 		potSettings.analog[i]->setAnalogResolution(1 << 13);
-
-#if BOARDTYPE == TEENSY4
-		pinMode(analogPins[i], INPUT);
-		potSettings.analog[i] = new ResponsiveAnalogRead(analogPins[i], true, .001);
-// 		potSettings.analog[i]->setAnalogResolution(10);
-//		potSettings.analog[i]->setActivityThreshold(8);
-#elif BOARDTYPE == OMX2040
-		potSettings.analog[i] = new ResponsiveAnalogRead(mux_common_pin, true, .001);
-
-#else
-		pinMode(analogPins[i], INPUT);
-		potSettings.analog[i] = new ResponsiveAnalogRead(analogPins[i], true, .001);
-		potSettings.analog[i]->setAnalogResolution(1 << 13);
-		potSettings.analog[i]->setActivityThreshold(32);
-#endif
-
-		currentValue[i] = 0;
-		lastMidiValue[i] = 0;
-	}
+	OmxHardware::initAnalog();
+	OmxHardware::initPots(potSettings);
 
 	// set DAC Resolution CV/GATE
 	RES = 12;
 	AMAX = pow(2, RES);
 	V_scale = 64; // pow(2,(RES-7)); 4095 max
 
-#if BOARDTYPE == TEENSY4
-	dac.setVoltage(0, false);
-#elif BOARDTYPE == OMX2040
-	dac.setVoltage(0, false);
-#else
-	analogWriteResolution(RES); // set resolution for DAC
-	analogWrite(CVPITCH_PIN, 0);
-#endif
+	OmxHardware::setDAC(0);
 
 	globalScale.calculateScale(scaleConfig.scaleRoot, scaleConfig.scalePattern);
 	omxModeMidi.SetScale(&globalScale);

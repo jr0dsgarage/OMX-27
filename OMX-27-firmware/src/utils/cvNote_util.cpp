@@ -1,6 +1,8 @@
 #include "cvNote_util.h"
 #include "../config.h"
 #include "../consts/consts.h"
+#include "../hardware/omx_hardware.h"
+#include "../hardware/hardware_config.h"
 
 const char *cvModeDispNames[] = {
 	"LEG",
@@ -193,13 +195,7 @@ void CVNoteUtil::setGate(bool high)
 void CVNoteUtil::setPitch(uint8_t cvNoteNum)
 {
     cvPitch = static_cast<int>(roundf(cvNoteNum * stepsPerSemitone)); // map (adjnote, 36, 91, 0, 4080);
-#if BOARDTYPE == TEENSY4
-    dac.setVoltage(cvPitch, false);
-#elif BOARDTYPE == OMX2040
-	dac.setVoltage(cvPitch, false);
-#else
-    analogWrite(CVPITCH_PIN, cvPitch);
-#endif
+    OmxHardware::setDAC(cvPitch);
 }
 
 CVNoteUtil cvNoteUtil;

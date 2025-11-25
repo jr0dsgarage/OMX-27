@@ -77,7 +77,7 @@ namespace MM
 
 	void handleNoteOn(byte channel, byte note, byte velocity)
 	{
-		digitalWrite(BLUELED, HIGH);
+		digitalWrite(kBLUELED, HIGH);
 		if (midiSettings.midiSoftThru)
 		{
 			sendNoteOnHW(note, velocity, channel);
@@ -92,7 +92,7 @@ namespace MM
 
 	void handleNoteOff(byte channel, byte note, byte velocity)
 	{
-		digitalWrite(BLUELED, LOW);
+		digitalWrite(kBLUELED, LOW);
 		if (midiSettings.midiSoftThru)
 		{
 			sendNoteOffHW(note, velocity, channel);
@@ -174,7 +174,7 @@ namespace MM
 	}
 
 	void handleStart() {
-		digitalWrite(REDLED, HIGH);
+		digitalWrite(kREDLED, HIGH);
 		clockstats.start();
 		startTransport();
 		if (midiSettings.midiSoftThru){
@@ -182,7 +182,7 @@ namespace MM
 	}
 
 	void handleStop() {
-		digitalWrite(REDLED, LOW);
+		digitalWrite(kREDLED, LOW);
 		clockstats.stop();
 		stopTransport();
 		if (midiSettings.midiSoftThru){
@@ -190,7 +190,7 @@ namespace MM
 	}
 
 	void handleContinue() {
-		digitalWrite(REDLED, HIGH);
+		digitalWrite(kREDLED, HIGH);
 		continueTransport();
 		if (midiSettings.midiSoftThru){
 		}

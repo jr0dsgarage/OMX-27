@@ -7,6 +7,7 @@
 // #include "../modes/sequencer.h"
 #include "../midi/noteoffs.h"
 #include "../consts/consts.h"
+#include "../hardware/hardware_config.h"
 
 using namespace grids;
 
@@ -76,11 +77,7 @@ void OmxModeGrids::onClockTick()
 
 void OmxModeGrids::onPotChanged(int potIndex, int prevValue, int newValue, int analogDelta)
 {
-#if (BOARDTYPE == TEENSY4 || BOARDTYPE == OMX2040)
-	int deltaTheshold = 1;
-#else
-	int deltaTheshold = 6;
-#endif
+	int deltaTheshold = kGridsDeltaThreshold;
 
 	if (midiModeception)
 	{

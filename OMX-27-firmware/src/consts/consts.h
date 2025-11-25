@@ -32,45 +32,14 @@
 #define DEV 0
 #define MIDIONLY 0
 
-
-#if BOARDTYPE == OMX2040
-	// I2C pin defs
-	const uint8_t I2C_SDA = 2;
-	const uint8_t I2C_SCL = 3;
-
-	// pin defs
-	const uint8_t TXLED = 0;
-	const uint8_t RXLED = 1;
-	const int REDLED = 16;		// RED LED
-	const int BLUELED = 18;		// BLUE LED
-	const int NEOPIXPIN = 19;
-	const int FIVEVEN = 17;
-
-#endif
+#include "../hardware/hardware_config.h"
 
 // Comment out defines to disable modes if needed for debug build
 #define OMXMODEGRIDS
 
 // HARDWARE Pin for CVGATE_PIN = 13 on beta1 boards, 22 on bodge/midi, 23 on 1.0
-#if DEV
-	const int CVGATE_PIN = 13;
-#elif BOARDTYPE == TEENSY4
-	const int CVGATE_PIN = 13;
-#elif MIDIONLY
-	const int CVGATE_PIN = 22; // 13 on beta1 boards, A10 (broken) on test/midi, 23 on 1.0
-#elif BOARDTYPE == OMX2040
-	const int CVGATE_PIN = 27;
-#else
-	const int CVGATE_PIN = 23; // 13 on beta1 boards, 22 on test, 23 on 1.0
-#endif
-
-#if BOARDTYPE == TEENSY4
-// const int CVPITCH_PIN = A14;
-#elif BOARDTYPE == OMX2040
-
-#else
-	const int CVPITCH_PIN = A14;
-#endif
+const int CVGATE_PIN = kCVGATE_PIN;
+const int CVPITCH_PIN = kCVPITCH_PIN;
 
 const int loSkip = 0;
 const int hiSkip = 0;

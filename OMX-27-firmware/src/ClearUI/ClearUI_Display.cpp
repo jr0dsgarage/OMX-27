@@ -27,7 +27,12 @@
 #define FONTSILK slkscr7pt7b
 #define FONTLIQUID liquid_7pt7b
 
+#include "ClearUI_Display.h"
+#undef WHITE
+#include "../hardware/omx_hardware.h"
+
 #define DIGIT_WIDTH 9
+
 #define DIGIT_HEIGHT 12
 
 #define DISPLAY_WIDTH 128
@@ -36,11 +41,7 @@
 #define CLKDURING 1000000
 #define CLKAFTER 400000
 
-#if BOARDTYPE == OMX2040
-Adafruit_SSD1306 display = Adafruit_SSD1306(DISPLAY_WIDTH, DISPLAY_HEIGHT, &Wire1, OLED_RST, CLKDURING, CLKAFTER);
-#else
-Adafruit_SSD1306 display = Adafruit_SSD1306(DISPLAY_WIDTH, DISPLAY_HEIGHT, &Wire, OLED_RST, CLKDURING, CLKAFTER);
-#endif
+Adafruit_SSD1306 display = Adafruit_SSD1306(DISPLAY_WIDTH, DISPLAY_HEIGHT, &OmxHardware::getDisplayI2C(), OLED_RST, CLKDURING, CLKAFTER);
 
 void initializeDisplay()
 {

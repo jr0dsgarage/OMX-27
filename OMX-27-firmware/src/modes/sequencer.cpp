@@ -11,6 +11,7 @@
 #include "../hardware/omx_leds.h"
 #include "../utils/omx_util.h"
 #include "../utils/cvNote_util.h"
+#include "../hardware/omx_hardware.h"
 
 // globals in main ino
 extern SequencerState sequencer;
@@ -734,13 +735,7 @@ void allNotesOff()
 
 void allNotesOffPanic()
 {
-#if BOARDTYPE == TEENSY4
-	dac.setVoltage(0, false);
-#elif BOARDTYPE == OMX2040
-	dac.setVoltage(0, false);
-#else
-	analogWrite(CVPITCH_PIN, 0);
-#endif
+    OmxHardware::setDAC(0);
 	digitalWrite(CVGATE_PIN, LOW);
 	for (int j = 0; j < 128; j++)
 	{

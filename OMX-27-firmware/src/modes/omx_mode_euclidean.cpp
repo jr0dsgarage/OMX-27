@@ -1,14 +1,16 @@
-#include "../modes/omx_mode_euclidean.h"
+#include "omx_mode_euclidean.h"
 #include "../config.h"
-#include "../utils/omx_util.h"
+#include "../consts/consts.h"
 #include "../hardware/omx_disp.h"
 #include "../hardware/omx_leds.h"
+#include "../hardware/hardware_config.h"
 // #include "../sequencer.h"
 #include "../modes/euclidean_sequencer.h"
 // #include "../ClearUI/ClearUI.h"
 #include "../midi/noteoffs.h"
 #include "../midi/midi.h"
 #include "../utils/logic_util.h"
+#include "../utils/omx_util.h"
 using namespace euclidean;
 
 using namespace euclidean;
@@ -355,15 +357,8 @@ void OmxModeEuclidean::onPotChanged(int potIndex, int prevValue, int newValue, i
 	{
 		// Serial.println("Edit Mode");
 
-#if (BOARDTYPE == TEENSY4 || BOARDTYPE == OMX2040)
-		// Assuming delta also small for T4
-		// Small delta on OMX2040
-		if (analogDelta < 1)
+		if (analogDelta < kAnalogDeltaThreshold)
 			return;
-#else
-		if (analogDelta < 3)
-			return;
-#endif
 
 		if (potIndex == 0)
 		{

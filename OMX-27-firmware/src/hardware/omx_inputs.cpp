@@ -2,6 +2,7 @@
 #include "../globals.h"
 #include "../modes/omx_screensaver.h"
 #include "../modes/omx_mode_interface.h"
+#include "omx_hardware.h"
 
 void OmxInputs::readPotentimeters()
 {
@@ -11,12 +12,7 @@ void OmxInputs::readPotentimeters()
 	{
 		int prevValue = potSettings.analogValues[k];
 		int prevAnalog = potSettings.analog[k]->getValue();
-#if BOARDTYPE == OMX2040
-		temp = mux.read(muxMapping[k]);
-// 		temp = 0;
-#else
-		temp = analogRead(analogPins[k]);
-#endif
+        temp = OmxHardware::readPot(k);
 		potSettings.analog[k]->update(temp);
 		// read from the smoother, constrain (to account for tolerances), and map it
 		temp = potSettings.analog[k]->getValue();

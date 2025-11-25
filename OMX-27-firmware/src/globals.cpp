@@ -1,4 +1,5 @@
 #include "globals.h"
+#include "hardware/hardware_config.h"
 #include "modes/omx_mode_midi_keyboard.h"
 #include "modes/omx_mode_drum.h"
 #include "modes/omx_mode_sequencer.h"
@@ -42,13 +43,8 @@ uint16_t AMAX;
 int V_scale;
 
 // ENCODER
-#if BOARDTYPE == OMX2040
-	Encoder myEncoder(25, 26); // encoder pins on hardware
-	const int buttonPin = 20;
-#else
-	Encoder myEncoder(12, 11); // encoder pins on hardware
-	const int buttonPin = 0;
-#endif
+Encoder myEncoder(kEncoderPin1, kEncoderPin2); // encoder pins on hardware
+const int buttonPin = kButtonPin;
 Button encButton(buttonPin);
 
 // KEYPAD
