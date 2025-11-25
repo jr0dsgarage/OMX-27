@@ -4,6 +4,13 @@
 #include "../consts/consts.h"
 #include "../ClearUI/ClearUI.h"
 #include "../globals.h"
+#include "../modes/omx_mode_midi_keyboard.h"
+#include "../modes/omx_mode_drum.h"
+#include "../modes/omx_mode_sequencer.h"
+#include "../modes/omx_mode_grids.h"
+#include "../modes/omx_mode_euclidean.h"
+#include "../modes/omx_mode_chords.h"
+#include "../modes/omx_screensaver.h"
 
 U8G2_FOR_ADAFRUIT_GFX u8g2_display;
 
